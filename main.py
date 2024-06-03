@@ -1,3 +1,8 @@
+import sys
+
+sys.path.append('/modules')
+
+
 # GLOBALS
 
 # board terrain legend
@@ -9,7 +14,27 @@ obstacle = 'O'
 empty = '.'
 
 # class legend
-
+monk = ''
+barbarian = ''
+assassin = ''
+rouge = ''
+pirate = ''
+knight = ''
+warrior = ''
+guardian = ''
+ranger = ''
+archer = ''
+hunter = ''
+jav = ''
+mage = ''
+elemental = ''
+warlock = ''
+wizard = ''
+healer = ''
+paladin = ''
+druid = ''
+bard = ''
+princess = ''
 
 # monster legend
 
@@ -28,8 +53,8 @@ def is_valid_move(board, visited, row, col, designated_point):
             board[row][col] != 'O' and not visited[row][col] and
             (row, col) != designated_point)
 
-# true if the chokepoint is a barrier.
-# A barrier only allows one hero through to the other side
+# true if the chokepoint is a dead_end
+# A dead_end only allows one hero through to the other side
 def is_barrier(board, chokepoint):
     row, col = chokepoint
     left = (row, col-1)
@@ -156,7 +181,7 @@ def find_chokepoints(board):
                 chokepoints.append((row, col))
     return chokepoints
 
-def find_barriers(board, chokepoints):
+def find_deadends(board, chokepoints):
     barriers = []
     for chokepoint in chokepoints:
         if is_barrier(board, chokepoint):
@@ -184,7 +209,19 @@ board = [
     ['O', ' ', 'O', ' ', ' ', ' ', 'O', ' ']
 ]
 
+terrain = [
+    "..b...",
+    "bbb...",
+    ".....l",
+    "....ll",
+    ".....i",
+    ".....i",
+    "www..."
+]
+
 chokepoints = find_chokepoints(board)
-barriers = find_barriers(board, chokepoints)
+deadends = find_deadends(board, chokepoints)
+print("chokepoints: ", chokepoints)
+print("deadends: ", deadends)
 print("Board:")
-print_board(board, chokepoints, barriers)
+print_board(board, chokepoints, deadends)
