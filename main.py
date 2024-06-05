@@ -268,15 +268,26 @@ def is_chokepoint(board, row, col):
 
     # Define the conditions for different types of chokepoints
     return (
-        (is_top_left_corner(board, row, col) and ((obstacle_below(board, row, col) and empty_square_right(board, row, col)) or (obstacle_right(board, row, col) and empty_square_below(board, row, col)))) or
-        (is_top_right_corner(board, row, col) and ((obstacle_below(board, row, col) and empty_square_left(board, row, col)) or (obstacle_left(board, row, col) and empty_square_below(board, row, col)))) or
-        (is_bottom_left_corner(board, row, col) and ((obstacle_above(board, row, col) and empty_square_right(board, row, col)) or (obstacle_right(board, row, col) and empty_square_above(board, row, col)))) or
-        (is_bottom_right_corner(board, row, col) and ((obstacle_above(board, row, col) and empty_square_left(board, row, col)) or (obstacle_left(board, row, col) and empty_square_above(board, row, col)))) or
-        (edge_above(board, row, col) and ((obstacle_left_right(board, row, col) and empty_square_below(board, row, col)) or (obstacle_below(board,row,col) and empty_square_left_right(board, row,col)))) or  # Above Edge
-        (edge_below(board, row, col) and ((obstacle_left_right(board, row, col) and empty_square_above(board, row, col)) or (obstacle_above(board,row,col) and empty_square_left_right(board, row,col)))) or  # Below Edge
-        (edge_left(board, row, col) and ((obstacle_above_below(board,row,col) and empty_square_right(board, row,col)) or (obstacle_right(board, row, col) and empty_square_above_below(board, row, col)))) or  # Left Edge
-        (edge_right(board, row, col) and ((obstacle_above_below(board,row,col) and empty_square_left(board, row,col)) or (obstacle_left(board, row, col) and empty_square_above_below(board, row, col)))) or  # Right Edge
-        (is_in_middle(board, row, col) and (empty_square_left_right(board, row, col) and obstacle_above_below(board, row, col))) or  (is_in_middle(board, row, col) and (empty_square_above_below(board, row, col) and obstacle_left_right(board, row, col))) # Middle
+        (is_top_left_corner(board, row, col) and 
+            ((obstacle_below(board, row, col) and empty_square_right(board, row, col)) or (obstacle_right(board, row, col) and empty_square_below(board, row, col)))) or # Top left corner
+        (is_top_right_corner(board, row, col) and 
+            ((obstacle_below(board, row, col) and empty_square_left(board, row, col)) or (obstacle_left(board, row, col) and empty_square_below(board, row, col)))) or # To right corner
+        (is_bottom_left_corner(board, row, col) and 
+            ((obstacle_above(board, row, col) and empty_square_right(board, row, col)) or (obstacle_right(board, row, col) and empty_square_above(board, row, col)))) or # Bottom left corner
+        (is_bottom_right_corner(board, row, col) and 
+            ((obstacle_above(board, row, col) and empty_square_left(board, row, col)) or (obstacle_left(board, row, col) and empty_square_above(board, row, col)))) or # Bottom right corner
+        (edge_above(board, row, col) and 
+            ((obstacle_left_right(board, row, col) and empty_square_below(board, row, col)) or (obstacle_below(board,row,col) and (empty_square_left(board, row,col) or empty_square_right(board, row, col))))) or  # Above Edge
+        (edge_below(board, row, col) and 
+            ((obstacle_left_right(board, row, col) and empty_square_above(board, row, col)) or (obstacle_above(board,row,col) and (empty_square_left(board, row,col) or empty_square_right(board, row, col))))) or  # Below Edge
+        (edge_left(board, row, col) and 
+            ((obstacle_above_below(board,row,col) and empty_square_right(board, row,col)) or (obstacle_right(board, row, col) and (empty_square_above(board, row, col) or empty_square_below(board, row, col))))) or  # Left Edge
+        (edge_right(board, row, col) and 
+            ((obstacle_above_below(board,row,col) and empty_square_left(board, row,col)) or (obstacle_left(board, row, col) and (empty_square_above(board, row, col) or empty_square_below(board, row, col))))) or  # Right Edge
+        (is_in_middle(board, row, col) and (
+            (obstacle_above_below(board, row, col) and (empty_square_left(board, row, col) or empty_square_right(board, row, col))) or
+            (obstacle_left_right(board, row, col) and (empty_square_above(board, row, col) or empty_square_below(board, row, col))) # Middle
+        ))
     )
 
 # ================================================================================

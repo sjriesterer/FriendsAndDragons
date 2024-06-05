@@ -1,3 +1,7 @@
+# Friends & Dragons
+
+This script will determine the top bests moves in the App Friends & Dragons.
+
 ## Terrains
 
 - Lava
@@ -19,18 +23,19 @@
 
 
 - Barrier: Anything a hero cannot move through (lava, water, block, rubble, monster)
-- Chokepoint: An empty square in-between barriers or the edge of the map and empty squares in the other cardinal directions
-- Deadend: A chokepoint where the path from one side to the other is only possible through the chokepoint
+- Chokepoint: An empty square in-between barriers or the edge of the map and at least one empty square in the other cardinal directions
+- Deadend: A chokepoint where the path from one side to the other is only possible through the chokepoint, or if it is next to another deadend if only one empty square is adjacent
 - Section: A part of the map seperated from other sections by barries.
 - Zone: A part of the map within a section where a hero can move. Zones are seperated by deadends. 
 - Deadend Zone: A deadend by itself is a seperate zone.
 - Pivot hero: The hero moving first.
 - Movable hero: The non-pivot heroes
 
-## Exmaple Terrain Map
+## Example Terrain Map
 
 An example terrain map where 'O' = obstacle, '.' = empty square, 'c' = chokepoint, 'd' = deadend:
 
+```
 ...O..
 ...O..
 OOOO..
@@ -39,9 +44,11 @@ OOOO..
 ..OcOc
 OOO...
 ......
+```
 
 In this example map, there are 2 sections. One section with 1 zone and another with 3 zones:
 
+```
 111 AA
 111 AA
     AA
@@ -50,6 +57,7 @@ CC AAA
 CC A A
    AAA
 AAAAAA
+```
 
 1: Section 1 (1 zone)
 A: Section 2 Zone A
@@ -74,27 +82,29 @@ C: Section 2 Zone C
 
 ## Classes
 
-**Name          Atk Type    Main Dir    Alt Dir     Spt Type    Spt Dir**
-- Monk          1           8
-- Knight        1           4
-- Warrior       1           4
-- Assassin      1           4
-- Guardian      1           4
-- Rogue         1           8
-- Pirate        3           8           4
-- Ranger        2           8
-- Archer        2           4
-- Hunter        2           4
-- Javeliner     3           4
-- Mage          4           4
-- Wizard        4           4
-- Elementalist  4           8
-- Warlock       3           4
-- Healer        3           4
-- Paladin       1           4
-- Druid         1           4
-- Princess      1           8
-- Bard          3           8
+| Name | Atk Type | Main Dir | Alt Dir | Spt Type | Spt Dir |
+|-|-|-|-|-|-|
+| Monk | 1 | 8 | | | | |
+| Monk | 1 | 8 | | | |
+| Knight | 1 | 4 | | | |
+| Warrior | 1 | 4 | | | |
+| Assassin | 1 | 4 | | | |
+| Guardian | 1 | 4 | | | |
+| Rogue | 1 | 8 | | | |
+| Pirate | 3 | 8 | 4 | | |
+| Ranger | 2 | 8 | | | |
+| Archer | 2 | 4 | | | |
+| Hunter | 2 | 4 | | | |
+| Javeliner | 3 | 4 | | | |
+| Mage | 4 | 4 | | | |
+| Wizard | 4 | 4 | | | |
+| Elementalist | 4 | 8 | | | |
+| Warlock | 3 | 4 | | | |
+| Healer | 3 | 4 | | | |
+| Paladin | 1 | 4 | | | |
+| Druid | 1 | 4 | | | |
+| Princess | 1 | 8 | | | |
+| Bard | 3 | 8 | | | |
 
 ## Rules
 
