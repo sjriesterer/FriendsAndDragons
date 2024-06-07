@@ -31,6 +31,7 @@ This script will determine the top bests moves in the App Friends & Dragons.
 - Pivot hero: The hero moving first.
 - Movable hero: The non-pivot heroes
 
+
 ## Example Terrain Map
 
 An example terrain map where 'O' = obstacle, '.' = empty square, 'c' = chokepoint, 'd' = deadend:

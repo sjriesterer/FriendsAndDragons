@@ -112,38 +112,111 @@ def is_valid_move(board, visited, row, col, designated_point):
 # ================================================================================
 # Checks if the chokepoint is a deadend by finding all paths from one end of the chokepoint to the other
 # if the only path is through the chockpoint, then it is a deadend
-def is_deadend(board, chokepoint):
+def is_deadend(board, chokepoints, chokepoint):
     row, col = chokepoint
-    up = (row, col-1)
-    down = (row, col+1)
-    right = (row+1, col)
-    left = (row-1, col)
-    check_up_down = False
-    check_left_right = False
+    left = (row, col-1)
+    right = (row, col+1)
+    above = (row-1, col)
+    below = (row+1, col)
+    start = (0,0)
+    end = (0,0)
 
-    # if next to the left or right edges of the map
-    if is_valid_point(board, left) is False or is_valid_point(board, right) is False:
-        check_up_down = True
+    print("\nchecking deadends for point ", chokepoint)
 
-    # if next to the top or bottom edges of the map
-    elif is_valid_point(board, up) is False or is_valid_point(board, down) is False:
-        check_left_right = True
-
-    elif board[row][col-1] == empty_square:
-        check_left_right = True
-
-    elif board[row-1][col] == empty_square:
-        check_up_down = True
-
-    else:
-        return False
-           
-    if check_up_down is True:
-        start = (row, col-1)
-        end = (row, col+1)
-    else:
-        start = (row-1, col)
-        end = (row+1, col)
+    if is_in_middle(board, row, col):
+        # If chokepoint is in the middle surrounded by empty_squares, need to evaulate paths 
+        if empty_square_left_and_right(board, row, col):
+            print("middle empty LR")
+            start = left
+            end = right
+        elif empty_square_above_and_below(board, row, col):
+            print("middle empty ab")
+            start = above
+            end = below
+        # Chokepoints surrounded by 3 obstacles are deadends only if burried 2 or more squares deep
+        elif obstacle_above_and_below(board, row, col):
+            if obstacle_left(board, row, col) and obstacle_above_right(board, row, col) and obstacle_below_right(board, row, col):
+                print("middle 1")
+                return True
+            elif obstacle_right(board, row, col) and obstacle_above_left(board, row, col) and obstacle_below_left(board, row, col):
+                print("middle 2")
+                return True
+        elif obstacle_left_and_right(board, row, col) :
+            if obstacle_above(board, row, col) and obstacle_below_left(board, row, col) and obstacle_below_right(board, row, col):
+                print("middle 3")
+                return True
+            elif obstacle_below(board, row, col) and obstacle_above_left(board, row, col) and obstacle_above_right(board, row, col):
+                print("middle 4")
+                return True
+    # Corners are only deadends if burried with 2 or more obstacles
+    elif is_top_left_corner(board, row, col):
+        if (obstacle_below(board, row, col) or obstacle_right(board, row, col)) and obstacle_below_right(board, row, col):
+            print("TL corner")
+            return True
+    elif is_top_right_corner(board, row, col):
+        if (obstacle_below(board, row, col) or obstacle_left(board, row, col)) and obstacle_below_left(board, row, col):
+            print("TR corner")
+            return True
+    elif is_bottom_left_corner(board, row, col):
+        if (obstacle_above(board, row, col) or obstacle_right(board, row, col)) and obstacle_above_right(board, row, col):
+            print("BL corner")
+            return True
+    elif is_bottom_right_corner(board, row, col):
+        if (obstacle_above(board, row, col) or obstacle_left(board, row, col)) and obstacle_above_left(board, row, col):
+            print("BR corner")
+            return True
+    # Edge chokepoints surrounded by empty sqaures need to evaluate paths
+    elif (edge_above(board, row, col) or edge_below(board, row, col)) and empty_square_left_and_right(board, row, col):
+            print("Edge A or B")
+            start = left
+            end = right
+    elif (edge_left(board, row, col) or edge_right(board, row, col)) and empty_square_above_and_below(board, row, col):
+            print("Edge L or R")
+            start = above
+            end = below
+    # Edge chokepoints 
+    elif edge_left(board, row, col):
+        if obstacle_above_and_below(board, row, col) and obstacle_above_right(board, row, col) and obstacle_below_right(board, row, col):
+            print("Edge L 1")
+            return True
+        elif obstacle_above(board, row, col) and obstacle_right(board, row, col) and obstacle_below_right(board, row, col):
+            print("Edge L 2")
+            return True
+        elif obstacle_below(board, row, col) and obstacle_right(board, row, col) and obstacle_above_right(board, row, col):
+            print("Edge L 3")
+            return True
+    elif edge_right(board, row, col):
+        if obstacle_above_and_below(board, row, col) and obstacle_above_left(board, row, col) and obstacle_below_left(board, row, col):
+            print("Edge R 1")
+            return True
+        elif obstacle_above(board, row, col) and obstacle_left(board, row, col) and obstacle_below_left(board, row, col):
+            print("Edge R 2")
+            return True
+        elif obstacle_below(board, row, col) and obstacle_left(board, row, col) and obstacle_above_left(board, row, col):
+            print("Edge R 3")
+            return True
+    elif edge_above(board, row, col):
+        if obstacle_left_and_right(board, row, col) and obstacle_below_left(board, row, col) and obstacle_below_right(board, row, col):
+            print("Edge A 1")
+            return True
+        elif obstacle_left(board, row, col) and obstacle_below(board, row, col) and obstacle_below_right(board, row, col):
+            print("Edge A 2")
+            return True
+        elif obstacle_right(board, row, col) and obstacle_below(board, row, col) and obstacle_below_left(board, row, col):
+            print("Edge A 3")
+            return True
+    elif edge_below(board, row, col):
+        if obstacle_left_and_right(board, row, col) and obstacle_below_left(board, row, col) and obstacle_above_left(board, row, col):
+            print("Edge B 1")
+            return True
+        elif obstacle_left(board, row, col) and obstacle_above(board, row, col) and obstacle_above_right(board, row, col):
+            print("Edge B 2")
+            return True
+        elif obstacle_right(board, row, col) and obstacle_above(board, row, col) and obstacle_above_left(board, row, col):
+            print("Edge B 3")
+            return True
+    
+    print("finding path from ", start, " to ", end)
 
     return not does_path_exist(board, start, end, chokepoint)
 
@@ -209,8 +282,27 @@ def get_paths(board, start, end, designated_point):
     backtrack(start_row, start_col, [start])
     return paths
 
-# region square checks
+# region SQUARE CHECKS
 # ================================================================================
+# Specific check
+def square_is(board, row, col, type):
+    return board[row][col] == type
+def square_is_empty(board, row, col):
+    return board[row][col] == empty_square
+def square_is_obstacle(board, row, col):
+    return board[row][col] == obstacle
+# ================================================================================
+# Diagnoal obstacles check
+def obstacle_above_left(board, row, col):
+    return board[row-1][col-1] == obstacle
+def obstacle_above_right(board, row, col):
+    return board[row-1][col+1] == obstacle
+def obstacle_below_left(board, row, col):
+    return board[row+1][col-1] == obstacle
+def obstacle_below_right(board, row, col):
+    return board[row+1][col+1] == obstacle
+# ================================================================================
+# Empty squares check
 def empty_square_left(board, row, col):
     return board[row][col-1] == empty_square
 def empty_square_right(board, row, col):
@@ -219,11 +311,12 @@ def empty_square_above(board, row, col):
     return board[row-1][col] == empty_square
 def empty_square_below(board, row, col):
     return board[row+1][col] == empty_square
-def empty_square_left_right(board, row, col):
+def empty_square_left_and_right(board, row, col):
     return empty_square_left(board, row, col) and empty_square_right(board, row, col)
-def empty_square_above_below(board, row, col):
+def empty_square_above_and_below(board, row, col):
     return empty_square_above(board, row, col) and empty_square_below(board, row, col)
 # ================================================================================
+# Obstacles check
 def obstacle_left(board, row, col):
     return board[row][col-1] == obstacle
 def obstacle_right(board, row, col):
@@ -232,11 +325,12 @@ def obstacle_above(board, row, col):
     return board[row-1][col] == obstacle
 def obstacle_below(board, row, col):
     return board[row+1][col] == obstacle
-def obstacle_left_right(board, row, col):
+def obstacle_left_and_right(board, row, col):
     return obstacle_left(board, row, col) and obstacle_right(board, row, col)
-def obstacle_above_below(board, row, col):
+def obstacle_above_and_below(board, row, col):
     return obstacle_above(board, row, col) and obstacle_below(board, row, col)
 # ================================================================================
+# Edges check
 def edge_left(board, row, col):
     return col == 0
 def edge_right(board, row, col):
@@ -246,6 +340,7 @@ def edge_above(board, row, col):
 def edge_below(board, row, col):
     return row == len(board) - 1
 # ================================================================================
+# Corners check
 def is_top_left_corner(board, row, col):
     return (row == 0 and col == 0)
 def is_top_right_corner(board, row, col):
@@ -255,6 +350,7 @@ def is_bottom_left_corner(board, row, col):
 def is_bottom_right_corner(board, row, col):
     return (row == len(board) - 1 and col == len(board[0]) - 1)
 # ================================================================================
+# Middle check
 def is_in_middle(board, row, col):
     return 0 < row < len(board) - 1 and 0 < col < len(board[0]) - 1
 # endregion
@@ -277,16 +373,16 @@ def is_chokepoint(board, row, col):
         (is_bottom_right_corner(board, row, col) and 
             ((obstacle_above(board, row, col) and empty_square_left(board, row, col)) or (obstacle_left(board, row, col) and empty_square_above(board, row, col)))) or # Bottom right corner
         (edge_above(board, row, col) and 
-            ((obstacle_left_right(board, row, col) and empty_square_below(board, row, col)) or (obstacle_below(board,row,col) and (empty_square_left(board, row,col) or empty_square_right(board, row, col))))) or  # Above Edge
+            ((obstacle_left_and_right(board, row, col) and empty_square_below(board, row, col)) or (obstacle_below(board,row,col) and (empty_square_left(board, row,col) or empty_square_right(board, row, col))))) or  # Above Edge
         (edge_below(board, row, col) and 
-            ((obstacle_left_right(board, row, col) and empty_square_above(board, row, col)) or (obstacle_above(board,row,col) and (empty_square_left(board, row,col) or empty_square_right(board, row, col))))) or  # Below Edge
+            ((obstacle_left_and_right(board, row, col) and empty_square_above(board, row, col)) or (obstacle_above(board,row,col) and (empty_square_left(board, row,col) or empty_square_right(board, row, col))))) or  # Below Edge
         (edge_left(board, row, col) and 
-            ((obstacle_above_below(board,row,col) and empty_square_right(board, row,col)) or (obstacle_right(board, row, col) and (empty_square_above(board, row, col) or empty_square_below(board, row, col))))) or  # Left Edge
+            ((obstacle_above_and_below(board,row,col) and empty_square_right(board, row,col)) or (obstacle_right(board, row, col) and (empty_square_above(board, row, col) or empty_square_below(board, row, col))))) or  # Left Edge
         (edge_right(board, row, col) and 
-            ((obstacle_above_below(board,row,col) and empty_square_left(board, row,col)) or (obstacle_left(board, row, col) and (empty_square_above(board, row, col) or empty_square_below(board, row, col))))) or  # Right Edge
+            ((obstacle_above_and_below(board,row,col) and empty_square_left(board, row,col)) or (obstacle_left(board, row, col) and (empty_square_above(board, row, col) or empty_square_below(board, row, col))))) or  # Right Edge
         (is_in_middle(board, row, col) and (
-            (obstacle_above_below(board, row, col) and (empty_square_left(board, row, col) or empty_square_right(board, row, col))) or
-            (obstacle_left_right(board, row, col) and (empty_square_above(board, row, col) or empty_square_below(board, row, col))) # Middle
+            (obstacle_above_and_below(board, row, col) and (empty_square_left(board, row, col) or empty_square_right(board, row, col))) or
+            (obstacle_left_and_right(board, row, col) and (empty_square_above(board, row, col) or empty_square_below(board, row, col))) # Middle
         ))
     )
 
@@ -303,7 +399,7 @@ def find_chokepoints(board):
 def find_deadends(board, chokepoints):
     barriers = []
     for chokepoint in chokepoints:
-        if is_deadend(board, chokepoint):
+        if is_deadend(board, chokepoints, chokepoint):
             barriers.append(chokepoint)
     return barriers
 
@@ -384,6 +480,7 @@ else:
     print_board(board_obstacles)
 
     chokepoints = find_chokepoints(board_obstacles)
+
     deadends = find_deadends(board_obstacles, chokepoints)
     print("\nchokepoints: ", chokepoints)
     print("deadends: ", deadends)
