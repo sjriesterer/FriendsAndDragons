@@ -6,7 +6,11 @@
 # IMPORTS
 # ================================================================================
 import sys
-from modules import *
+from modules.hero import Hero
+
+from enums import *
+from inputs import Inputs
+from logger import log
 
 sys.path.append('/modules')
 
@@ -14,38 +18,22 @@ sys.path.append('/modules')
 # INPUTS
 # ================================================================================
 
-terrain = [
-    "..o...",
-    "ooo...",
-    ".....l",
-    "oo..ll",
-    ".....i",
-    ".....i",
-    "www...",
-    "......"
-]
+inputs = Inputs()
+terrain = inputs.terrain
+positions = inputs.positions
 
-positions = [
-    "...aaa",
-    "....a.",
-    ".a...b",
-    "...bbb",
-    "aa....",
-    "......",
-    "......",
-    "123456"
-]
-
-heros = [
-    "monk", "knight", "mage", "rogue", "hunter", "pirate"
-]
 # ================================================================================
 # GLOBALS
 # ================================================================================
 
 # GLOBALS
+DEBUG = False
 
-# board terrain legend
+obstacle_codes = [Board.lava, Board.obstacle, Board.rubble, Board.water, Board.monster]
+obstacles = [char.value for char in obstacle_codes]
+monster_codes = [Monsters.monster1, Monsters.monster2, Monsters.monster3, Monsters.monster4]
+monsters = [char.value for char in monster_codes]
+
 lava = 'L'
 water = 'W'
 rubble = 'R'
@@ -54,38 +42,18 @@ obstacle = 'O'
 empty_square = '.'
 monster = 'M'
 
-# Monsters
-monster1 = 'A'
-monster2 = 'B'
-monster3 = 'C'
-monster4 = 'D'
-
-obstacles = [lava, water, rubble, obstacle]
-monsters = [monster1, monster2, monster3, monster4]
-
-# class legend
-monk = ''
-barbarian = ''
-assassin = ''
-rouge = ''
-pirate = ''
-knight = ''
-warrior = ''
-guardian = ''
-ranger = ''
-archer = ''
-hunter = ''
-jav = ''
-mage = ''
-elemental = ''
-warlock = ''
-wizard = ''
-healer = ''
-paladin = ''
-druid = ''
-bard = ''
-princess = ''
-
+# ================================================================================
+# CLASSES
+# ================================================================================
+class Zone:
+    def __init__(self, section, id, is_deadend=False):
+        self.section = section
+        self.id = id
+        self.is_deadend = is_deadend
+        self.points = []
+        self.connected_zones = []
+    def __str__(self):
+        return f'Section: {self.section}, ID: {self.id}, Deadend: {self.is_deadend}, Points: {self.points}, Zones Connected: {self.connected_zones}'
 
 # ================================================================================
 # METHODS
@@ -121,119 +89,108 @@ def is_deadend(board, chokepoints, chokepoint):
     start = (0,0)
     end = (0,0)
 
-    print("\nchecking deadends for point ", chokepoint)
+    log(f"\nchecking deadends for point {chokepoint}")
 
     if is_in_middle(board, row, col):
         # If chokepoint is in the middle surrounded by empty_squares, need to evaulate paths 
         if empty_square_left_and_right(board, row, col):
-            print("middle empty LR")
+            log("middle empty LR")
             start = left
             end = right
         elif empty_square_above_and_below(board, row, col):
-            print("middle empty ab")
+            log("middle empty ab")
             start = above
             end = below
         # Chokepoints surrounded by 3 obstacles are deadends only if burried 2 or more squares deep
         elif obstacle_above_and_below(board, row, col):
             if obstacle_left(board, row, col) and obstacle_above_right(board, row, col) and obstacle_below_right(board, row, col):
-                print("middle 1")
+                log("middle 1")
                 return True
             elif obstacle_right(board, row, col) and obstacle_above_left(board, row, col) and obstacle_below_left(board, row, col):
-                print("middle 2")
+                log("middle 2")
                 return True
         elif obstacle_left_and_right(board, row, col) :
             if obstacle_above(board, row, col) and obstacle_below_left(board, row, col) and obstacle_below_right(board, row, col):
-                print("middle 3")
+                log("middle 3")
                 return True
             elif obstacle_below(board, row, col) and obstacle_above_left(board, row, col) and obstacle_above_right(board, row, col):
-                print("middle 4")
+                log("middle 4")
                 return True
     # Corners are only deadends if burried with 2 or more obstacles
     elif is_top_left_corner(board, row, col):
         if (obstacle_below(board, row, col) or obstacle_right(board, row, col)) and obstacle_below_right(board, row, col):
-            print("TL corner")
+            log("TL corner")
             return True
     elif is_top_right_corner(board, row, col):
         if (obstacle_below(board, row, col) or obstacle_left(board, row, col)) and obstacle_below_left(board, row, col):
-            print("TR corner")
+            log("TR corner")
             return True
     elif is_bottom_left_corner(board, row, col):
         if (obstacle_above(board, row, col) or obstacle_right(board, row, col)) and obstacle_above_right(board, row, col):
-            print("BL corner")
+            log("BL corner")
             return True
     elif is_bottom_right_corner(board, row, col):
         if (obstacle_above(board, row, col) or obstacle_left(board, row, col)) and obstacle_above_left(board, row, col):
-            print("BR corner")
+            log("BR corner")
             return True
     # Edge chokepoints surrounded by empty sqaures need to evaluate paths
     elif (edge_above(board, row, col) or edge_below(board, row, col)) and empty_square_left_and_right(board, row, col):
-            print("Edge A or B")
+            log("Edge A or B")
             start = left
             end = right
     elif (edge_left(board, row, col) or edge_right(board, row, col)) and empty_square_above_and_below(board, row, col):
-            print("Edge L or R")
+            log("Edge L or R")
             start = above
             end = below
     # Edge chokepoints 
     elif edge_left(board, row, col):
         if obstacle_above_and_below(board, row, col) and obstacle_above_right(board, row, col) and obstacle_below_right(board, row, col):
-            print("Edge L 1")
+            log("Edge L 1")
             return True
         elif obstacle_above(board, row, col) and obstacle_right(board, row, col) and obstacle_below_right(board, row, col):
-            print("Edge L 2")
+            log("Edge L 2")
             return True
         elif obstacle_below(board, row, col) and obstacle_right(board, row, col) and obstacle_above_right(board, row, col):
-            print("Edge L 3")
+            log("Edge L 3")
             return True
     elif edge_right(board, row, col):
         if obstacle_above_and_below(board, row, col) and obstacle_above_left(board, row, col) and obstacle_below_left(board, row, col):
-            print("Edge R 1")
+            log("Edge R 1")
             return True
         elif obstacle_above(board, row, col) and obstacle_left(board, row, col) and obstacle_below_left(board, row, col):
-            print("Edge R 2")
+            log("Edge R 2")
             return True
         elif obstacle_below(board, row, col) and obstacle_left(board, row, col) and obstacle_above_left(board, row, col):
-            print("Edge R 3")
+            log("Edge R 3")
             return True
     elif edge_above(board, row, col):
         if obstacle_left_and_right(board, row, col) and obstacle_below_left(board, row, col) and obstacle_below_right(board, row, col):
-            print("Edge A 1")
+            log("Edge A 1")
             return True
         elif obstacle_left(board, row, col) and obstacle_below(board, row, col) and obstacle_below_right(board, row, col):
-            print("Edge A 2")
+            log("Edge A 2")
             return True
         elif obstacle_right(board, row, col) and obstacle_below(board, row, col) and obstacle_below_left(board, row, col):
-            print("Edge A 3")
+            log("Edge A 3")
             return True
     elif edge_below(board, row, col):
         if obstacle_left_and_right(board, row, col) and obstacle_below_left(board, row, col) and obstacle_above_left(board, row, col):
-            print("Edge B 1")
+            log("Edge B 1")
             return True
         elif obstacle_left(board, row, col) and obstacle_above(board, row, col) and obstacle_above_right(board, row, col):
-            print("Edge B 2")
+            log("Edge B 2")
             return True
         elif obstacle_right(board, row, col) and obstacle_above(board, row, col) and obstacle_above_left(board, row, col):
-            print("Edge B 3")
+            log("Edge B 3")
             return True
     
-    print("finding path from ", start, " to ", end)
+    log(f"finding path from {start} to {end}")
 
     return not does_path_exist(board, start, end, chokepoint)
 
 # ================================================================================
-def is_dead_end_corner(board, row, col, deadends, chokepoints):
-    if (0, 0) in chokepoints and (0, 1) in deadends:
-        deadends.append((0,0))
-    if (0, len(board[0]) - 1) in chokepoints and (0, len(board[0] - 2)) in deadends:
-        deadends.append((0, len(board[0]) - 1))
-    if (len(board) -1, 0) in chokepoints and (len(board) - 2, 0) in deadends:
-        deadends.append((len(board) -1, 0))
-    if (len(board) -1, len(board[0]) - 1) in chokepoints and (len(board) - 2, len(board[0]) - 2) in deadends:
-        deadends.append((len(board) -1, len(board[0]) - 1))
-    return deadends
-# ================================================================================
-# true if a path exists on the board from start to end not passing through the designated_point
-def does_path_exist(board, start, end, designated_point):
+# True if a path exists on the board from start to end and not passing through the chokepoint
+def does_path_exist(board, start, end, chokepoint):
     rows = len(board)
     cols = len(board[0])
     visited = [[False for _ in range(cols)] for _ in range(rows)]
@@ -246,7 +203,7 @@ def does_path_exist(board, start, end, designated_point):
         directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
         for dr, dc in directions:
             new_row, new_col = row + dr, col + dc
-            if is_valid_move(board, visited, new_row, new_col, designated_point):
+            if is_valid_move(board, visited, new_row, new_col, chokepoint):
                 if backtrack(new_row, new_col):
                     return True
                 
@@ -387,6 +344,97 @@ def is_chokepoint(board, row, col):
     )
 
 # ================================================================================
+def get_zones(board, deadends):
+    rows, cols = len(board), len(board[0])
+    directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+    deadends_set = set(deadends)
+    visited = set()
+    zones_pre = []
+    zone_id = -1
+    
+    def is_cardinally_adjacent(point1, point2):
+        return (abs(point1[0] - point2[0]) == 1 and point1[1] == point2[1]) or (abs(point1[1] - point2[1]) == 1 and point1[0] == point2[0])
+
+    def bfs(start):
+        queue = [start]
+        zone = []
+        while queue:
+            r, c = queue.pop(0)
+            if (r, c) in visited or (r, c) in deadends_set or board[r][c] == 'O':
+                continue
+            visited.add((r, c))
+            zone.append((r, c))
+            for dr, dc in directions:
+                nr, nc = r + dr, c + dc
+                if 0 <= nr < rows and 0 <= nc < cols and (nr, nc) not in visited:
+                    queue.append((nr, nc))
+        return zone
+    
+    def mark_sections(zones):
+        section_counter = -1
+        visited = set()
+        
+        def dfs(zone, section_id):
+            stack = [zone]
+            while stack:
+                current_zone = stack.pop()
+                if current_zone.id in visited:
+                    continue
+                visited.add(current_zone.id)
+                current_zone.section = section_id
+                for connected_zone_id in current_zone.connected_zones:
+                    connected_zone = next(z for z in zones if z.id == connected_zone_id)
+                    if connected_zone.id not in visited:
+                        stack.append(connected_zone)
+        
+        for zone in zones:
+            if zone.id not in visited:
+                section_counter += 1
+                dfs(zone, section_counter)
+
+    for r in range(rows):
+        for c in range(cols):
+            if board[r][c] == empty_square and (r, c) not in visited:
+                if (r, c) in deadends_set:
+                    zones_pre.append([(r, c)])  # Add deadend as individual zone
+                else:
+                    new_zone = bfs((r, c))
+                    if new_zone:
+                        zones_pre.append(sorted(new_zone))
+    
+    # Sort the zones based on their top-left coordinate
+    zones_pre.sort(key=lambda zone: zone[0] if zone else (rows, cols))
+    
+    zones = []
+
+    for z in zones_pre:
+        zone_id = zone_id + 1
+        is_a_deadend = False
+        if len(z) == 1 and z[0] in deadends:
+            is_a_deadend = True
+        new_zone = Zone(section = 0, id=zone_id, is_deadend=is_a_deadend)
+        new_zone.points = z
+        zones.append(new_zone)
+
+    for i in range(len(zones)):
+        for j in range(i + 1, len(zones)):  # Only compare each pair of zones once
+            connected = False
+            for point1 in zones[i].points:
+                for point2 in zones[j].points:
+                    if is_cardinally_adjacent(point1, point2):
+                        connected = True
+                        break
+                if connected:
+                    break
+            if connected:
+                zones[i].connected_zones.append(zones[j].id)
+                zones[j].connected_zones.append(zones[i].id)
+
+    mark_sections(zones)
+
+    return zones
+
+# ================================================================================
 def find_chokepoints(board):
     chokepoints = []
     for row in range(len(board)):
@@ -418,7 +466,7 @@ def print_board(board):
         print(' '.join(row))
 
 # ================================================================================
-    # Use a list comprehension to convert each string into a list of characters
+# Use a list comprehension to convert each string into a list of characters
 def parse_input(input):
     board = [list(row) for row in input]
     return board
@@ -438,11 +486,12 @@ def validate_inputs():
     return True
 
 # ================================================================================
+# Evaluates both boards and identifies obstacles into one board
 def get_obstacle_board(board_terrain, board_pos):
     # Determine the size of the boards
     rows = len(board_terrain)
     cols = len(board_terrain[0])
-    
+
     # Create an empty board for the final output
     final_board = [[empty_square for _ in range(cols)] for _ in range(rows)]
     
@@ -480,13 +529,16 @@ else:
     print_board(board_obstacles)
 
     chokepoints = find_chokepoints(board_obstacles)
-
     deadends = find_deadends(board_obstacles, chokepoints)
     print("\nchokepoints: ", chokepoints)
     print("deadends: ", deadends)
-    # print("Board:")
-    # print_board(board, chokepoints, deadends)
 
-    # monk: MyHero = MyHero(name="monk")
-    # print(monk)
+    zones = get_zones(board_obstacles, deadends)
 
+    for z in zones:
+        print(z)
+
+    ob = Hero()
+    ob.name = 'Monk'
+    print(ob)
+    

@@ -107,31 +107,58 @@ C: Section 2 Zone C
 | Princess | 1 | 8 | | | |
 | Bard | 3 | 8 | | | |
 
-## Rules
-
-A pivot hero moves first
-A pivot hero can move anywhere in his section
-Movable heroes in the same section as the pivot can move anywhere in their zone
-Movable heroes in the same section as the pivot can also move to any deadend zone connected to their zone
-    (as long as the pivot does not pass through that deadend zone to the other zone)
-
-
 ## Algorithm
 
 Init
     Parse the inputs into useable objects
 Indentification
     Identify the chokepoints
-    Identify the deadends by searching for alternate paths through the chokepoints
-    Identify the zones by walking through the empty squares
-        (Any left over empty squares not zoned will be seperate section(s))
-        Repeat for all sections until all empty squares are assigned
-Calculating Configurations
-    Starting with the pivot hero
-        Iterate through the available configurations of hero placements using the rules
-            Calculate move difficulty for each configuration
-            Calculate damage assessment for each configuration
+    Identify the deadends
+    Identify the zones
+    Identify the sections
+    Identify the shortests paths from all zones to each other zones
+Move Init
+    Identify all allowable moves of the pivot hero
+    Identify all allowable moves of the moveable heros
+Brute Force Loop:
+    Pivot hero loop through all allowable points (current pivot point)
+        # Current moveable points:
+        Hero 2 loop through all allowable points
+            Hero 3 loop through all allowable points
+                Hero 4 loop through all allowable points
+                    Hero 5 loop through all allowable points
+                        Hero 6 loop through all allowable points
+                            Evaluate configuration and move difficulty
 
+## Move Rules
+
+A pivot hero moves first and can move anywhere in his section. The loop for the pivot hero evaluates all 
+allowable points of the pivot hero. The current point being evaluated here is called the current pivot point.
+
+All other heroes move in their allowable moves until all configurations have been evaluated. These points are 
+called the current moveable points.
+
+Pivot hero can move anywhere in his section
+Moveable heroes can move anywhere in their zones if in the same section as the pivot, else they cannot move
+Moveable heroes can move to some deadends considering the following:
+    There are 2 paths of the pivot hero to consider:
+        Main Path: Shortest path from his starting zone to the current pivot point being evaluated.
+            This is the main path of the pivot that he must make.
+        Alt Path: Shortest path from his starting zone to the zone of the starting zone of the moveable hero
+            These are alternate paths that the pivot must move through to move all moveable heroes but the pivot
+            will move back to the original start after doing so and continue through the main path.
+    Case 1: The moveable hero starting zone is in the main path:
+        A moveable hero can move to any deaded connected to his starting zone if the deadend zone is not in the main path. He can also move to any deadend lower on the main path stack. For example, if the main path is
+        3-5d-6-8d-9, this means the pivot starts in zone 3, moves through zone 5 which is a deadend, to zone 6,
+        through zone 8 another deadend, and landing in zone 9. In such a case, if a moveable hero starts in zone 6, 
+        he can move to zone 5d but not to 8d.
+    Case 2: The moveable hero starting zone is not in the main path:
+        A moveable hero can move to any deaded connected to his starting zone if the deadend zone is not in the alt
+        path. He can also move to any deadend higher on the alt path stack. For example, if the alt path is
+        3-10d-11-15d-16, this means the pivot starts in zone 3, moves through zone 10 which is a deadend, to zone 11,
+        through zone 15 another deadend, and landing in zone 16. In such a case, if a moveable hero starts in zone 11, 
+        he can move to zone 15d but not to 10d.
+    
 ## Damage Assessment
 
 
