@@ -7,7 +7,7 @@ class Inputs():
     ".....i",
     ".....i",
     "www...",
-    "......"
+    "l...rr"
 ]
 
     positions = [
@@ -18,9 +18,9 @@ class Inputs():
         "aa....",
         "......",
         "......",
-        "123456"
+        "012345"
     ]
 
-    heros = [
+    heroes = [
         "monk", "knight", "mage", "rogue", "hunter", "pirate"
     ]

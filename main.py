@@ -21,16 +21,23 @@ sys.path.append('/modules')
 inputs = Inputs()
 terrain = inputs.terrain
 positions = inputs.positions
+hero_inputs = inputs.heroes
 
 # ================================================================================
 # GLOBALS
 # ================================================================================
-
-# GLOBALS
-DEBUG = False
 
 obstacle_codes = [Board.lava, Board.obstacle, Board.rubble, Board.water, Board.monster]
+obstacle_codes_lava = [Board.obstacle, Board.rubble, Board.water, Board.monster]
+obstacle_codes_water = [Board.lava, Board.obstacle, Board.rubble, Board.monster] 
+obstacle_codes_flying = [Board.obstacle, Board.monster]
+obstacle_codes_rubble = [Board.lava, Board.obstacle, Board.water, Board.monster]
 obstacles = [char.value for char in obstacle_codes]
+obstacles_lava = [char.value for char in obstacle_codes_lava]
+obstacles_water = [char.value for char in obstacle_codes_water]
+obstacles_flying = [char.value for char in obstacle_codes_flying]
+obstacles_rubble = [char.value for char in obstacle_codes_rubble]
+
 monster_codes = [Monsters.monster1, Monsters.monster2, Monsters.monster3, Monsters.monster4]
 monsters = [char.value for char in monster_codes]
 
@@ -56,7 +63,23 @@ class Zone:
         return f'Section: {self.section}, ID: {self.id}, Deadend: {self.is_deadend}, Points: {self.points}, Zones Connected: {self.connected_zones}'
 
 # ================================================================================
-# METHODS
+# INIT METHODS
+# ================================================================================
+# Use a list comprehension to convert each string into a list of characters
+def parse_input(input):
+    board = [list(row) for row in input]
+    return board
+
+# ================================================================================
+# Remove spaces and convert to uppercase
+def format_input(input):
+    new_input = []
+    for item in input:
+        new_input.append(item.upper().replace(' ', ''))
+    return new_input
+
+# ================================================================================
+# VALIDATION METHODS
 # ================================================================================
 # Function to check if a point is within the bounds of the board
 def within_bounds(row, col, rows, cols):
@@ -76,10 +99,92 @@ def is_valid_move(board, visited, row, col, designated_point):
     return (0 <= row < rows and 0 <= col < cols and
             board[row][col] != 'O' and not visited[row][col] and
             (row, col) != designated_point)
+# ================================================================================
+#
+def validate_inputs():
+    #TODO
+    return True
 
 # ================================================================================
-# Checks if the chokepoint is a deadend by finding all paths from one end of the chokepoint to the other
-# if the only path is through the chockpoint, then it is a deadend
+# SQUARE CHECK METHODS
+# ================================================================================
+# region SQUARE CHECKS
+# ================================================================================
+# Specific check
+def square_is(board, row, col, type):
+    return board[row][col] == type
+def square_is_empty(board, row, col):
+    return board[row][col] == empty_square
+def square_is_obstacle(board, row, col):
+    return board[row][col] == obstacle
+# ================================================================================
+# Diagnoal obstacles check
+def obstacle_above_left(board, row, col):
+    return board[row-1][col-1] == obstacle
+def obstacle_above_right(board, row, col):
+    return board[row-1][col+1] == obstacle
+def obstacle_below_left(board, row, col):
+    return board[row+1][col-1] == obstacle
+def obstacle_below_right(board, row, col):
+    return board[row+1][col+1] == obstacle
+# ================================================================================
+# Empty squares check
+def empty_square_left(board, row, col):
+    return board[row][col-1] == empty_square
+def empty_square_right(board, row, col):
+    return board[row][col+1] == empty_square
+def empty_square_above(board, row, col):
+    return board[row-1][col] == empty_square
+def empty_square_below(board, row, col):
+    return board[row+1][col] == empty_square
+def empty_square_left_and_right(board, row, col):
+    return empty_square_left(board, row, col) and empty_square_right(board, row, col)
+def empty_square_above_and_below(board, row, col):
+    return empty_square_above(board, row, col) and empty_square_below(board, row, col)
+# ================================================================================
+# Obstacles check
+def obstacle_left(board, row, col):
+    return board[row][col-1] == obstacle
+def obstacle_right(board, row, col):
+    return board[row][col+1] == obstacle
+def obstacle_above(board, row, col):
+    return board[row-1][col] == obstacle
+def obstacle_below(board, row, col):
+    return board[row+1][col] == obstacle
+def obstacle_left_and_right(board, row, col):
+    return obstacle_left(board, row, col) and obstacle_right(board, row, col)
+def obstacle_above_and_below(board, row, col):
+    return obstacle_above(board, row, col) and obstacle_below(board, row, col)
+# ================================================================================
+# Edges check
+def edge_left(board, row, col):
+    return col == 0
+def edge_right(board, row, col):
+    return col == len(board[0]) - 1
+def edge_above(board, row, col):
+    return row == 0
+def edge_below(board, row, col):
+    return row == len(board) - 1
+# ================================================================================
+# Corners check
+def is_top_left_corner(board, row, col):
+    return (row == 0 and col == 0)
+def is_top_right_corner(board, row, col):
+    return (row == 0 and col == len(board[0]) -1)
+def is_bottom_left_corner(board, row, col):
+    return (row == len(board) - 1 and col == 0)
+def is_bottom_right_corner(board, row, col):
+    return (row == len(board) - 1 and col == len(board[0]) - 1)
+# ================================================================================
+# Middle check
+def is_in_middle(board, row, col):
+    return 0 < row < len(board) - 1 and 0 < col < len(board[0]) - 1
+# endregion
+
+# ================================================================================
+# PATH & BOARD METHODS
+# ================================================================================
+# Checks if the chokepoint is a deadend 
 def is_deadend(board, chokepoints, chokepoint):
     row, col = chokepoint
     left = (row, col-1)
@@ -214,105 +319,6 @@ def does_path_exist(board, start, end, chokepoint):
     return backtrack(start_row, start_col)
 
 # ================================================================================
-# gets all paths from start to end on the board not passing through the designated_point
-def get_paths(board, start, end, designated_point):
-    rows = len(board)
-    cols = len(board[0])
-    visited = [[False for _ in range(cols)] for _ in range(rows)]
-    paths = []
-    
-    def backtrack(row, col, path):
-        if (row, col) == end:
-            paths.append(path)
-            return
-        visited[row][col] = True
-        
-        directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
-        for dr, dc in directions:
-            new_row, new_col = row + dr, col + dc
-            if is_valid_move(board, visited, new_row, new_col, designated_point):
-                backtrack(new_row, new_col, path + [(new_row, new_col)])
-                
-        visited[row][col] = False
-    
-    start_row, start_col = start
-    backtrack(start_row, start_col, [start])
-    return paths
-
-# region SQUARE CHECKS
-# ================================================================================
-# Specific check
-def square_is(board, row, col, type):
-    return board[row][col] == type
-def square_is_empty(board, row, col):
-    return board[row][col] == empty_square
-def square_is_obstacle(board, row, col):
-    return board[row][col] == obstacle
-# ================================================================================
-# Diagnoal obstacles check
-def obstacle_above_left(board, row, col):
-    return board[row-1][col-1] == obstacle
-def obstacle_above_right(board, row, col):
-    return board[row-1][col+1] == obstacle
-def obstacle_below_left(board, row, col):
-    return board[row+1][col-1] == obstacle
-def obstacle_below_right(board, row, col):
-    return board[row+1][col+1] == obstacle
-# ================================================================================
-# Empty squares check
-def empty_square_left(board, row, col):
-    return board[row][col-1] == empty_square
-def empty_square_right(board, row, col):
-    return board[row][col+1] == empty_square
-def empty_square_above(board, row, col):
-    return board[row-1][col] == empty_square
-def empty_square_below(board, row, col):
-    return board[row+1][col] == empty_square
-def empty_square_left_and_right(board, row, col):
-    return empty_square_left(board, row, col) and empty_square_right(board, row, col)
-def empty_square_above_and_below(board, row, col):
-    return empty_square_above(board, row, col) and empty_square_below(board, row, col)
-# ================================================================================
-# Obstacles check
-def obstacle_left(board, row, col):
-    return board[row][col-1] == obstacle
-def obstacle_right(board, row, col):
-    return board[row][col+1] == obstacle
-def obstacle_above(board, row, col):
-    return board[row-1][col] == obstacle
-def obstacle_below(board, row, col):
-    return board[row+1][col] == obstacle
-def obstacle_left_and_right(board, row, col):
-    return obstacle_left(board, row, col) and obstacle_right(board, row, col)
-def obstacle_above_and_below(board, row, col):
-    return obstacle_above(board, row, col) and obstacle_below(board, row, col)
-# ================================================================================
-# Edges check
-def edge_left(board, row, col):
-    return col == 0
-def edge_right(board, row, col):
-    return col == len(board[0]) - 1
-def edge_above(board, row, col):
-    return row == 0
-def edge_below(board, row, col):
-    return row == len(board) - 1
-# ================================================================================
-# Corners check
-def is_top_left_corner(board, row, col):
-    return (row == 0 and col == 0)
-def is_top_right_corner(board, row, col):
-    return (row == 0 and col == len(board[0]) -1)
-def is_bottom_left_corner(board, row, col):
-    return (row == len(board) - 1 and col == 0)
-def is_bottom_right_corner(board, row, col):
-    return (row == len(board) - 1 and col == len(board[0]) - 1)
-# ================================================================================
-# Middle check
-def is_in_middle(board, row, col):
-    return 0 < row < len(board) - 1 and 0 < col < len(board[0]) - 1
-# endregion
-
-# ================================================================================
 # Checks if the point is a chokepoint
 def is_chokepoint(board, row, col):
     # Ensure the current cell is an empty square
@@ -344,17 +350,20 @@ def is_chokepoint(board, row, col):
     )
 
 # ================================================================================
+# Returns a list of zones based on the board and deadends
 def get_zones(board, deadends):
     rows, cols = len(board), len(board[0])
     directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
     deadends_set = set(deadends)
     visited = set()
-    zones_pre = []
+    zones_pre = [] # Set of zones before adding connections and sections
+    zones = [] # Set of Zone objects
     zone_id = -1
     
     def is_cardinally_adjacent(point1, point2):
         return (abs(point1[0] - point2[0]) == 1 and point1[1] == point2[1]) or (abs(point1[1] - point2[1]) == 1 and point1[0] == point2[0])
 
+    # Breadth first search through board
     def bfs(start):
         queue = [start]
         zone = []
@@ -370,6 +379,7 @@ def get_zones(board, deadends):
                     queue.append((nr, nc))
         return zone
     
+    # Mark what section the zones are in
     def mark_sections(zones):
         section_counter = -1
         visited = set()
@@ -392,6 +402,7 @@ def get_zones(board, deadends):
                 section_counter += 1
                 dfs(zone, section_counter)
 
+    # Get the points in the zones
     for r in range(rows):
         for c in range(cols):
             if board[r][c] == empty_square and (r, c) not in visited:
@@ -405,8 +416,7 @@ def get_zones(board, deadends):
     # Sort the zones based on their top-left coordinate
     zones_pre.sort(key=lambda zone: zone[0] if zone else (rows, cols))
     
-    zones = []
-
+    # Marks the is_deaded property of the zone if the zone is a deadend
     for z in zones_pre:
         zone_id = zone_id + 1
         is_a_deadend = False
@@ -416,6 +426,7 @@ def get_zones(board, deadends):
         new_zone.points = z
         zones.append(new_zone)
 
+    # Assigns the connected_zones property of the zones:
     for i in range(len(zones)):
         for j in range(i + 1, len(zones)):  # Only compare each pair of zones once
             connected = False
@@ -444,50 +455,8 @@ def find_chokepoints(board):
     return chokepoints
 
 # ================================================================================
-def find_deadends(board, chokepoints):
-    barriers = []
-    for chokepoint in chokepoints:
-        if is_deadend(board, chokepoints, chokepoint):
-            barriers.append(chokepoint)
-    return barriers
-
-# ================================================================================
-def print_board(board):
-    # Print column numbers
-    print('    ', end='')
-    for col in range(len(board[0])):
-        print(f'{col:2}', end='')
-    print()
-    print(" ----------------")
-
-    # Print board rows with row numbers
-    for i, row in enumerate(board):
-        print(f'{i:2} | ', end='')
-        print(' '.join(row))
-
-# ================================================================================
-# Use a list comprehension to convert each string into a list of characters
-def parse_input(input):
-    board = [list(row) for row in input]
-    return board
-
-# ================================================================================
-# Remove spaces and convert to uppercase
-def format_input(input):
-    new_input = []
-    for item in input:
-        new_input.append(item.upper().replace(' ', ''))
-    return new_input
-
-# ================================================================================
-#
-def validate_inputs():
-    #TODO
-    return True
-
-# ================================================================================
 # Evaluates both boards and identifies obstacles into one board
-def get_obstacle_board(board_terrain, board_pos):
+def get_obstacle_board(board_terrain, board_pos, obstacles):
     # Determine the size of the boards
     rows = len(board_terrain)
     cols = len(board_terrain[0])
@@ -509,36 +478,259 @@ def get_obstacle_board(board_terrain, board_pos):
                 final_board[i][j] = empty_square
     
     return final_board
+
+# ================================================================================
+def find_deadends(board, chokepoints):
+    barriers = []
+    for chokepoint in chokepoints:
+        if is_deadend(board, chokepoints, chokepoint):
+            barriers.append(chokepoint)
+    return barriers
+
+# ================================================================================
+# PRINT METHODS
+# ================================================================================
+def print_board(board):
+    # Print column numbers
+    print('    ', end='')
+    for col in range(len(board[0])):
+        print(f'{col:2}', end='')
+    print()
+    print(" ----------------")
+
+    # Print board rows with row numbers
+    for i, row in enumerate(board):
+        print(f'{i:2} | ', end='')
+        print(' '.join(row))
+
+# ================================================================================
+# HERO METHODS
+# ================================================================================
+
+# Returns the point of the hero id on the board
+def get_hero_pos(board, id):
+    id_str = str(id)
+    for row_index, row in enumerate(board):
+        for col_index, cell in enumerate(row):
+            if cell == id_str:
+                return (row_index, col_index)
+    return None  # Return None if the id is not found
+# ================================================================================
+
+def init_heroes():
+    heroes = []
+    id = 0
+    for hero in hero_inputs:
+        h = get_hero(hero)
+        h.id = id
+        h.starting_point = get_hero_pos(positions, id)
+        h.current_point = h.starting_point
+        heroes.append(h)
+        id = id + 1
+    return heroes
+# ================================================================================
+def get_hero(hero_name):
+    name = hero_name.lower()
+    # melee4_heroes = ['assassin', 'knight']
+    # melee8_heroes = ['monk', 'rouge', 'barbarian']
+    # range4_heroes = []
+    # range8_heroes = ['ranger']
+    # magic4_heroes = ['mage']
+    # magic8_heroes = ['elementalist']
+
+    hero = Hero()
+    hero.name = hero_name
+
+    if name == 'monk':
+        hero.attack_type = 1
+    elif name == 'barbarian':
+        hero.attack_type = 1
+    elif name == 'assassin':
+        hero.attack_type = 1
+    elif name == 'rouge':
+        hero.attack_type = 1
+    elif name == 'knight':
+        hero.attack_type = 1
+    elif name == 'warrior':
+        hero.attack_type = 1
+    elif name == 'guardian':
+        hero.attack_type = 1
+    elif name == 'pirate':
+        hero.attack_type = 1
+    elif name == 'ranger':
+        hero.attack_type = 1
+    elif name == 'archer':
+        hero.attack_type = 1
+    elif name == 'hunter':
+        hero.attack_type = 1
+    elif name == 'jav':
+        hero.attack_type = 1
+    elif name == 'mage':
+        hero.attack_type = 1
+    elif name == 'elemental':
+        hero.attack_type = 1
+    elif name == 'warlock':
+        hero.attack_type = 1
+    elif name == 'wizard':
+        hero.attack_type = 1
+    elif name == 'healer':
+        hero.attack_type = 1
+    elif name == 'paladin':
+        hero.attack_type = 1
+    elif name == 'druid':
+        hero.attack_type = 1
+    elif name == 'bard':
+        hero.attack_type = 1
+    elif name == 'princess':
+        hero.attack_type = 1
+
+    return hero
+
+# ================================================================================
+# LOOP METHODS
+# ================================================================================
+class Section():
+    paths = []
+
+class Path():
+    zones = []
+
+class Zone2():
+    maps = []
+
+class Map():
+    points = []
+
+
+def init_master_list():
+    master: list[Section] = []
+
+    return master
+
+def loop(board, positions, zones, heroes):
+    
+    # configs = []
+
+    # get master list of allowable points
+    # get master list of allowable points for pivot
+
+    # pivot_ids = [0,1,2,3,4,5]
+    # movable_heroes = []
+
+    # get pivot id of current pivot
+    # current_config = []
+
+# for pivot in pivots:
+    # pivot_allowable_points = 
+    # for point in pivot_allowable_points:
+
+        # section_id = heroes[pivot].section
+        # current_path = get_pivot_path()
+        # hero_starting_zone = heroes[current_pivot].starting_point
+        # hero_board_map = heroes[current_pivot].board_map
+        # current_config.append()
+
+        # for point in master_list[section_id].paths[current_path].zones[hero_starting_zone].map[hero_board_map].points:
+            
+            # hero2 loop:
+                # hero3 loop:
+                    # hero4 loop:
+                        # hero5 loop:
+
+
+    # def get_pivot_path():
+
+
+    pivot = 1
+
+
+
 # ================================================================================
 # SCRIPT
 # ================================================================================
 
 if validate_inputs is False:
-    pass
-else:
+    exit()
 
-    board_terrain = parse_input(format_input(terrain))
-    board_pos = parse_input(format_input(positions))
-    board_obstacles = get_obstacle_board(board_terrain, board_pos)
+board_terrain = parse_input(format_input(terrain))
+board_pos = parse_input(format_input(positions))
+board_obstacles = get_obstacle_board(board_terrain, board_pos, obstacles)
+board_obstacles_lava = get_obstacle_board(board_terrain, board_pos, obstacles_lava)
+board_obstacles_water = get_obstacle_board(board_terrain, board_pos, obstacles_water)
+board_obstacles_flying = get_obstacle_board(board_terrain, board_pos, obstacles_flying)
+board_obstacles_rubble = get_obstacle_board(board_terrain, board_pos, obstacles_rubble)
 
-    print("\nTerrain:")
-    print_board(board_terrain)
-    print("\nPositions:")
-    print_board(board_pos)
-    print("\nObstacles:")
-    print_board(board_obstacles)
+boards = [board_obstacles, board_obstacles_lava, board_obstacles_water, board_obstacles_flying, board_obstacles_rubble]
 
-    chokepoints = find_chokepoints(board_obstacles)
-    deadends = find_deadends(board_obstacles, chokepoints)
-    print("\nchokepoints: ", chokepoints)
-    print("deadends: ", deadends)
+print("\nTerrain:")
+print_board(board_terrain)
+print("\nPositions:")
+print_board(board_pos)
 
-    zones = get_zones(board_obstacles, deadends)
+# Obstacle board
+print("\n--------------------------------")
+print("\nObstacles:")
+print_board(board_obstacles)
+chokepoints = find_chokepoints(board_obstacles)
+deadends = find_deadends(board_obstacles, chokepoints)
+print("\nchokepoints: ", chokepoints)
+print("deadends: ", deadends)
+zones = get_zones(board_obstacles, deadends)
+for z in zones:
+    print(z)
 
-    for z in zones:
-        print(z)
+# Obstacle board for lava walkers
+print("\n--------------------------------")
+print("\nObstacles Lava:")
+print_board(board_obstacles_lava)
+chokepoints_lava = find_chokepoints(board_obstacles_lava)
+deadends_lava = find_deadends(board_obstacles_lava, chokepoints_lava)
+print("\nchokepoints_lava: ", chokepoints_lava)
+print("deadends_lava: ", deadends_lava)
+zones_lava = get_zones(board_obstacles_lava, deadends_lava)
+for z in zones_lava:
+    print(z)
 
-    ob = Hero()
-    ob.name = 'Monk'
-    print(ob)
-    
+# Obstacle board for water walkers
+print("\n--------------------------------")
+print("\nObstacles water:")
+print_board(board_obstacles_water)
+chokepoints_water = find_chokepoints(board_obstacles_water)
+deadends_water = find_deadends(board_obstacles_water, chokepoints_water)
+print("\nchokepoints_water: ", chokepoints_water)
+print("deadends_water: ", deadends_water)
+zones_water = get_zones(board_obstacles_water, deadends_water)
+for z in zones_water:
+    print(z)
+
+# Obstacle board for flying heroes
+print("\n--------------------------------")
+print("\nObstacles flying:")
+print_board(board_obstacles_flying)
+chokepoints_flying = find_chokepoints(board_obstacles_flying)
+deadends_flying = find_deadends(board_obstacles_flying, chokepoints_flying)
+print("\nchokepoints_flying: ", chokepoints_flying)
+print("deadends_flying: ", deadends_flying)
+zones_flying = get_zones(board_obstacles_flying, deadends_flying)
+for z in zones_flying:
+    print(z)
+
+# Obstacle board for rubble walkers
+print("\n--------------------------------")
+print("\nObstacles rubble:")
+print_board(board_obstacles_rubble)
+chokepoints_rubble = find_chokepoints(board_obstacles_rubble)
+deadends_rubble = find_deadends(board_obstacles_rubble, chokepoints_rubble)
+print("\nchokepoints_rubble: ", chokepoints_rubble)
+print("deadends_rubble: ", deadends_rubble)
+zones_rubble = get_zones(board_obstacles_rubble, deadends_rubble)
+for z in zones_rubble:
+    print(z)
+
+
+heroes = init_heroes()
+
+for h in heroes:
+    print(h)
+
+loop(board_obstacles, board_pos, zones, heroes)

@@ -22,15 +22,27 @@ This script will determine the top bests moves in the App Friends & Dragons.
 ## Definitions
 
 
-- Barrier: Anything a hero cannot move through (lava, water, block, rubble, monster)
-- Chokepoint: An empty square in-between barriers or the edge of the map and at least one empty square in the other cardinal directions
-- Deadend: A chokepoint where the path from one side to the other is only possible through the chokepoint, or if it is next to another deadend if only one empty square is adjacent
-- Section: A part of the map seperated from other sections by barries.
-- Zone: A part of the map within a section where a hero can move. Zones are seperated by deadends. 
-- Deadend Zone: A deadend by itself is a seperate zone.
-- Pivot hero: The hero moving first.
+- Obstacle: Anything a hero cannot move through (lava, water, block, rubble, monster)
+- Chokepoint: An empty square in-between barriers or the edge of the map and at least one empty 
+    square in the other cardinal directions
+- Deadend: A chokepoint where the path from one side to the other is only possible through the 
+    chokepoint, or if it is next to another deadend if only one empty square is adjacent
+- Section: A part of the map seperated from other sections by barries
+- Zone: A part of the map within a section where a hero can move. Zones are seperated by deadends.
+- Deadend Zone: A deadend by itself is a seperate zone
+- Pivot hero: The hero moving first
 - Movable hero: The non-pivot heroes
-
+- Pivot point: The current point of the pivot being evaluated
+- Moveable point: The current point of the movable hero being evaluated
+- Main Path: Shortest path from the pivot's starting zone to the current pivot point being 
+    evaluated. This is the main path of the pivot that he must make.
+- Alt Path: Shortest path from the pivot's starting zone to the starting zone of a native hero. 
+    These are alternate paths that the pivot must move through to move all moveable heroes but 
+    the pivot will move back to the original start after doing so and continue through the main 
+    path.
+- Native hero: Heroes that are in a zone of the main path
+- Stranded hero: Heroes that are in the same section as the pivot hero but not in the main path
+- Alien hero: Heroes that are in a different section than the pivot hero
 
 ## Example Terrain Map
 
@@ -138,23 +150,20 @@ allowable points of the pivot hero. The current point being evaluated here is ca
 All other heroes move in their allowable moves until all configurations have been evaluated. These points are 
 called the current moveable points.
 
-Pivot hero can move anywhere in his section
-Moveable heroes can move anywhere in their zones if in the same section as the pivot, else they cannot move
+Pivot hero can move anywhere in his section. The obstacle board he uses corresponds to his traits. For example, a lava walker will use the board_lava.
+Moveable heroes can move anywhere in their zones if in the same section as the pivot, else they cannot move. A moveable heroe with the same trait
+    as the pivot hero will use that same board. For example, if the pivot and the movable hero are a lava walker, both will use the board_lava as their
+    obstacle board.
 Moveable heroes can move to some deadends considering the following:
-    There are 2 paths of the pivot hero to consider:
-        Main Path: Shortest path from his starting zone to the current pivot point being evaluated.
-            This is the main path of the pivot that he must make.
-        Alt Path: Shortest path from his starting zone to the zone of the starting zone of the moveable hero
-            These are alternate paths that the pivot must move through to move all moveable heroes but the pivot
-            will move back to the original start after doing so and continue through the main path.
-    Case 1: The moveable hero starting zone is in the main path:
-        A moveable hero can move to any deaded connected to his starting zone if the deadend zone is not in the main path. He can also move to any deadend lower on the main path stack. For example, if the main path is
+    Case 1: Native hero:
+        A moveable hero can move to any deaded connected to his starting zone if the deadend zone is not in the main path. 
+        He can also move to any deadend lower on the main path stack. For example, if the main path is
         3-5d-6-8d-9, this means the pivot starts in zone 3, moves through zone 5 which is a deadend, to zone 6,
         through zone 8 another deadend, and landing in zone 9. In such a case, if a moveable hero starts in zone 6, 
         he can move to zone 5d but not to 8d.
-    Case 2: The moveable hero starting zone is not in the main path:
-        A moveable hero can move to any deaded connected to his starting zone if the deadend zone is not in the alt
-        path. He can also move to any deadend higher on the alt path stack. For example, if the alt path is
+    Case 2: Stranded hero:
+        A moveable hero can move to any deaded connected to his starting zone if the deadend zone is not in the alt path. 
+        He can also move to any deadend higher on the alt path stack. For example, if the alt path is
         3-10d-11-15d-16, this means the pivot starts in zone 3, moves through zone 10 which is a deadend, to zone 11,
         through zone 15 another deadend, and landing in zone 16. In such a case, if a moveable hero starts in zone 11, 
         he can move to zone 15d but not to 10d.
