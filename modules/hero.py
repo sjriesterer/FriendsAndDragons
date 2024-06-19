@@ -17,8 +17,8 @@ class Hero:
         self.mighty_blow: int = 0
         self.section = 0
         self.starting_point: tuple = (0,0)
-        self.current_point: tuple = (0,0)
         self.board_map = 0
+        self.pivot_points = []
 
     def __str__(self):
         return f'ID: {self.id}, Name: {self.name}, Attack: {self.attack}, Start Pos: {self.starting_point}, Current Pos: {self.current_point}'

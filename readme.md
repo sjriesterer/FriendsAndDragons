@@ -168,6 +168,36 @@ Moveable heroes can move to some deadends considering the following:
         through zone 15 another deadend, and landing in zone 16. In such a case, if a moveable hero starts in zone 11, 
         he can move to zone 15d but not to 10d.
     
+##
+
+Hero on Main path:
+
+Hero on a deadend: Hero can move anywhere in his start zone, anywhere in previous zone, any connected DE in the previous zone (except his start zone)
+Hero on a nondeadend: Hero can move anywhere in his start zone, any connected DE (except the upstream DE)
+
+
+
+
+Hero on Main path:
+    Pivot: nondeadend zone; len(path) = 1; hero on same zone as pivot (nondeadend) : Anywhere in zone & any connected deadend
+    Pivot: nondeadend zone; len(path) = 2; hero on start zone as pivot (nondeadend) : Anywhere in zone & any connected deadend downstream except pivot end zone
+    Pivot: nondeadend zone; len(path) = 2; hero on end zone as pivot (deadend) : Anywhere in pivot start zone and any connected deadend except pivot end zone
+    Pivot: nondeadend zone; len(path) > 2; hero on start zone as pivot (nondeadend) : Anywhere in zone & any connected deadend except upstream from his zone
+    Pivot: nondeadend zone; len(path) > 2; hero on middle zone as pivot (deadend) : Anywhere in previous zone & any connected deadend except upstream from his zone
+    Pivot: nondeadend zone; len(path) > 2; hero on middle zone as pivot (nondeadend) : Anywhere in zone & any connected deadend except upstream from his zone
+    Pivot: nondeadend zone; len(path) > 2; hero on end zone as pivot (nondeadend) : Anywhere in zone & any connected deadend except upstream from his zone
+    Pivot: nondeadend zone; len(path) > 2; hero on end zone as pivot (deadend) : Anywhere in previous zone & any connected deadend except upstream from his zone
+
+    Pivot: deadend zone; len(path) = 2; hero on end zone as pivot (nondeadend) : Anywhere in zone & any connected deadend except upstream from his zone
+    Pivot: deadend zone; len(path) > 2; hero on middle zone as pivot (deadend) : Anywhere in previous zone & any connected deadend except upstream from his zone
+    Pivot: deadend zone; len(path) > 2; hero on middle zone as pivot (nondeadend) : Anywhere in zone & any connected deadend except upstream from his zone
+    Pivot: deadend zone; len(path) > 2; hero on end zone as pivot (nondeadend) : Anywhere in zone & any connected deadend except upstream from his zone
+    Pivot: deadend zone; len(path) > 2; hero on end zone as pivot (deadend) : Anywhere in previous zone & any connected deadend except upstream from his zone
+
+Hero on Alt path:
+
+
+
 ## Damage Assessment
 
 
