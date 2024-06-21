@@ -357,7 +357,7 @@ def is_chokepoint(board, row, col):
 
 # =================================================================================================
 # Returns a list of zones based on the board and deadends
-def get_zones(board, deadends):
+def get_zones_of_board(board, deadends):
     rows, cols = len(board), len(board[0])
     directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
     deadends_set = set(deadends)
@@ -524,7 +524,7 @@ def get_hero_pos(board, hero_id):
     return None  # Return None if the id is not found
 
 # =================================================================================================
-
+# 
 def init_heroes():
     heroes = []
     id = 0
@@ -536,6 +536,7 @@ def init_heroes():
         heroes.append(h)
         id = id + 1
     return heroes
+
 # =================================================================================================
 def get_hero(hero_name):
     name = hero_name.lower()
@@ -618,7 +619,7 @@ def init_master_list():
 
 # =================================================================================================
 # Gets all the sections of a give list of zones
-def get_sections(zones):
+def get_sections_in_zones(zones):
     sections = []
     for z in zones:
         if z.section not in sections:
@@ -627,7 +628,7 @@ def get_sections(zones):
 
 # =================================================================================================
 # Gets a list of paths between the zones of a section. Every combination is included.
-def get_paths(section: int, zones: list[Zone]):
+def get_paths_in_section(section: int, zones: list[Zone]) -> list[list[int]]:
     # Helper function to perform DFS and find all paths
     def dfs(current_zone, visited):
         visited.append(current_zone.id)
@@ -648,15 +649,28 @@ def get_paths(section: int, zones: list[Zone]):
 
 # =================================================================================================
 # Gets the index ID of the path in paths where start_zone is the first and end_zone is the last
-def get_path(paths, start_zone, end_zone):
-    for index, path in enumerate(paths):
-        if path[0] == start_zone and path[-1] == end_zone:
-            return index
-    return None  # Return None if no such path is found
+# def get_path(paths, start_zone, end_zone):
+#     for index, path in enumerate(paths):
+#         if path[0] == start_zone and path[-1] == end_zone:
+#             return index
+#     return None  # Return None if no such path is found
+
+# =================================================================================================
+# Gets the index ID of the path in paths where start_zone is the first and end_zone is the last
+def get_path_from_start_to_end(paths: list[list[int]], start_zone: int, end_zone: int) -> list[int] | None:
+    for p in paths:
+        if p[0] == start_zone and p[-1] == end_zone:
+            return p
+    return None
+
+    # for index, path in enumerate(paths):
+    #     if path[0] == start_zone and path[-1] == end_zone:
+    #         return path
+    # return None  # Return None if no such path is found
 
 # =================================================================================================
 # Gets the zone id of the point given
-def get_zone_of_pivot(zones, point):
+def get_zone_of_pivot(zones: list[Zone], point: tuple) -> Zone | None:
     for zone in zones:
         if point in zone.points:
             return zone
@@ -664,8 +678,12 @@ def get_zone_of_pivot(zones, point):
 
 # =================================================================================================
 # Gets a minimized list of Zone objects of only the section given
-def get_zones_sub(section: int, zones: list[Zone]):
-    return [zone for zone in zones if zone.section == section]
+def get_zones_in_section(section: int, zones: list[Zone]) -> list[Zone]:
+    result = []
+    for zone in zones:
+        if zone.section == section:
+            result.append(zone)
+    return result
 
 # =================================================================================================
 # Gets a list of all allowable points for a moveable hero who is on the main path of the pivot
@@ -673,11 +691,8 @@ def get_zones_sub(section: int, zones: list[Zone]):
 # main_path = the id of the current main path of the pivot (from pivot start zone to current pivot point)
 # start_zone = the starting zone of the movable hero
 #TODO nees rigourous testing
-def get_points_main(zones: list[Zone], main_path: int, start_zone: int):
+def get_points_main(zones: list[Zone], main_path: list[int], start_zone: int):
     allowable_points = []
-
-    # Find the main path
-    main_path = paths[main_path]
 
     # Check if the start_zone is a deadend zone
     if is_deadend_zone(start_zone, zones):
@@ -697,7 +712,7 @@ def get_points_main(zones: list[Zone], main_path: int, start_zone: int):
         if current_zone:
             allowable_points.extend(current_zone.points)
             connected_deadend_zones = get_connected_deadend_zones(start_zone, zones)
-            next_deadend_zone_id = get_next_deadend_zone(start_zone, main_path)
+            next_deadend_zone_id = get_next_deadend_zone(start_zone, main_path, zones)
             for z_id in connected_deadend_zones:
                 if z_id != next_deadend_zone_id:
                     zone = next((z for z in zones if z.id == z_id), None)
@@ -716,52 +731,8 @@ def get_points_main(zones: list[Zone], main_path: int, start_zone: int):
 # alt_path = the id of the alternate path of the pivot (from pivot start zone to hero start zone)
 # start_zone = the starting zone of the movable hero
 #TODO nees rigourous testing
-def get_points_alt(zones: list[Zone], main_path: list[int], alt_path: list[int], start_zone: int):
-    allowable_points = []  
-
-    current_zone = next((z for z in zones if z.id == start_zone), None)
-    if current_zone:
-        allowable_points.extend(current_zone.points)
-
-    if is_deadend_zone(start_zone, zones):
-        previous_alt_zone_id = get_previous_zone(start_zone, alt_path)
-        if previous_alt_zone_id:
-            previous_alt_zone = next((z for z in zones if z.id == previous_alt_zone_id), None)
-            if previous_alt_zone and not previous_alt_zone.is_deadend:
-                allowable_points.extend(previous_alt_zone.points)
-                connected_deadend_zones = get_connected_deadend_zones(previous_alt_zone_id, zones)
-
-                if zone_is_on_main_path(previous_alt_zone_id, main_path):
-                    unallowable_zone = get_next_deadend_zone(previous_alt_zone_id, main_path)
-                else:
-                    unallowable_zone = get_previous_deadend_zone(previous_alt_zone_id, alt_path)
-
-                for z_id in connected_deadend_zones:
-                    if z_id != unallowable_zone:
-                        zone = next((z for z in zones if z.id == z_id), None)
-                        if zone:
-                            allowable_points.extend(zone.points)
-    else:
-        connected_deadend_zones = get_connected_deadend_zones(start_zone, zones)
-        unallowable_zone = get_previous_deadend_zone(start_zone, alt_path)
-        for z_id in connected_deadend_zones:
-            if z_id != unallowable_zone:
-                zone = next((z for z in zones if z.id == z_id), None)
-                if zone:
-                    allowable_points.extend(zone.points)
-
-    # Sort the resulting list of points by row and then by column
-    allowable_points = sorted(allowable_points, key=lambda p: (p[0], p[1]))
-    unique_points = remove_duplicates(allowable_points)
-
-    return unique_points
-
-def get_points_alt(zones: list[Zone], main_path: int, alt_path: int, start_zone: int):
+def get_points_alt(zones: list[Zone], main_path_list: list[int], alt_path_list: list[int], start_zone: int):
     allowable_points = []  # Allow duplicates
-
-    # Find the main and alt paths
-    main_path_list = main_path if isinstance(main_path, list) else paths[main_path]
-    alt_path_list = alt_path if isinstance(alt_path, list) else paths[alt_path]
 
     current_zone = next((z for z in zones if z.id == start_zone), None)
     if current_zone:
@@ -776,9 +747,9 @@ def get_points_alt(zones: list[Zone], main_path: int, alt_path: int, start_zone:
                 connected_deadend_zones = get_connected_deadend_zones(previous_alt_zone_id, zones)
 
                 if zone_is_on_main_path(previous_alt_zone_id, main_path_list):
-                    unallowable_zone = get_next_deadend_zone(previous_alt_zone_id, main_path_list)
+                    unallowable_zone = get_next_deadend_zone(previous_alt_zone_id, main_path_list, zones)
                 else:
-                    unallowable_zone = get_previous_deadend_zone(previous_alt_zone_id, alt_path_list)
+                    unallowable_zone = get_previous_deadend_zone(previous_alt_zone_id, alt_path_list, zones)
 
                 for z_id in connected_deadend_zones:
                     if z_id != unallowable_zone:
@@ -787,7 +758,7 @@ def get_points_alt(zones: list[Zone], main_path: int, alt_path: int, start_zone:
                             allowable_points.extend(zone.points)
     else:
         connected_deadend_zones = get_connected_deadend_zones(start_zone, zones)
-        unallowable_zone = get_previous_deadend_zone(start_zone, alt_path_list)
+        unallowable_zone = get_previous_deadend_zone(start_zone, alt_path_list, zones)
         for z_id in connected_deadend_zones:
             if z_id != unallowable_zone:
                 zone = next((z for z in zones if z.id == z_id), None)
@@ -803,6 +774,7 @@ def get_points_alt(zones: list[Zone], main_path: int, alt_path: int, start_zone:
 # =================================================================================================
 def remove_duplicates(list):
     return [t for t in (set(tuple(i) for i in list))]
+
 # =================================================================================================
 def is_deadend_zone(zone_id, zones):
     for z in zones:
@@ -813,26 +785,24 @@ def is_deadend_zone(zone_id, zones):
 # =================================================================================================
 # Gets the previous zone before the zone_id on the path given
 def get_previous_zone(zone_id: int, path: list[int]):
-    
-    # print(path)
-    # index = path.index(zone_id)
-    # if index:
-    #     return index
-    # return None
-
-    if zone_id in path:
-        idx = path.index(zone_id)
-        if idx > 0:
-            return path[idx - 1]
+    for p in range(len(path) - 1):
+        if zone_id == path[p+1]:
+            return p
     return None
 
+    # if zone_id in path:
+    #     idx = path.index(zone_id)
+    #     if idx > 0:
+    #         return path[idx - 1]
+    # return None
+
 # =================================================================================================
-def zone_is_on_main_path(zone_id, main_path):
+def zone_is_on_main_path(zone_id, main_path: list[int]):
     return zone_id in main_path
 
 # =================================================================================================
 # Get all connected deadend zones to the zone_id given
-def get_connected_deadend_zones(zone_id, zones):
+def get_connected_deadend_zones(zone_id, zones: list[Zone]):
     connected_deadend_zones = []
     for z in zones:
         if z.id == zone_id:
@@ -843,23 +813,87 @@ def get_connected_deadend_zones(zone_id, zones):
 
 # =================================================================================================
 # Returns the previous deadend zone prior to the zone_id on the path of zones given
-def get_previous_deadend_zone(zone_id, path):
+def get_previous_deadend_zone(zone_id, path: list[Zone], zones: list[Zone]):
     if zone_id in path:
-        idx = path.index(zone_id)
-        for prev_id in reversed(path[:idx]):
-            if is_deadend_zone(prev_id, zones):
-                return prev_id
+        index_of_zone = path.index(zone_id)
+        if index_of_zone <= 0:
+            return None
+        for i in range(index_of_zone - 1, -1, -1):
+            if is_deadend_zone(path[i], zones):
+                return path[i]
     return None
+        
+    #     idx = path.index(zone_id)
+    #     for prev_id in reversed(path[:idx]):
+    #         if is_deadend_zone(prev_id, zones):
+    #             return prev_id
+    # return None
 
 # =================================================================================================
 # Returns the next deadend zone after the zone_id on the path of zones given
-def get_next_deadend_zone(zone_id, path):
+def get_next_deadend_zone(zone_id, path: list[int], zones: list[Zone]):
     if zone_id in path:
-        idx = path.index(zone_id)
-        for next_id in path[idx + 1:]:
-            if is_deadend_zone(next_id, zones):
-                return next_id
+        index_of_zone = path.index(zone_id)
+        if index_of_zone >= len(path) - 1:
+            return None
+        for i in range(index_of_zone + 1, len(path)):
+            if is_deadend_zone(path[i], zones):
+                return path[i]
     return None
+
+    # if zone_id in path:
+    #     idx = path.index(zone_id)
+    #     for next_id in path[idx + 1:]:
+    #         if is_deadend_zone(next_id, zones):
+    #             return next_id
+    # return None
+
+# =================================================================================================
+# 
+def get_allowable_points(all_sections: list[int], all_zones: list[Zone], all_paths: list[list[int]]) -> list[list[list[list[tuple]]]]:
+    allowable_points = []
+
+    for s in range(len(all_sections)):
+        section_points = []
+        zones_in_this_section = get_zones_in_section(all_sections[s], all_zones)
+        paths_in_this_section = get_paths_in_section(s, all_zones)
+        
+        for p in range(len(paths_in_this_section)):
+            path_points = []
+            path = paths_in_this_section[p]
+            pivot_start_zone = path[0]
+            
+            for z in range(len(zones_in_this_section)):
+                zone_points = []
+                zone = zones_in_this_section[z]
+                current_zone_id = zone.id
+                
+                if current_zone_id in path:
+                    points = get_points_main(zones_in_this_section, path, current_zone_id)  # Replace with your logic
+                else:
+                    alt_path = get_path_from_start_to_end(paths_in_this_section, pivot_start_zone, current_zone_id)  # Replace with your logic
+                    points = get_points_alt(zones_in_this_section, path, alt_path, current_zone_id)  # Replace with your logic
+                
+                zone_points.extend(points)  # Extend zone_points with tuples of points
+                
+                path_points.append(zone_points)  # Append zone_points to path_points
+            
+            section_points.append(path_points)  # Append path_points to section_points
+        
+        allowable_points.append(section_points)  # Append section_points to allowable_points
+    
+    # Writing debug information to debug_log.txt
+    with open("logs/debug_log.txt", "w") as debug_file:
+        for s in range(len(all_sections)):
+            debug_file.write(f"Section {s}: ====================================\n")
+            for p in range(len(paths_in_this_section)):
+                debug_file.write(f"============================================================================================\n  S: {s} : Path {p}: {paths_in_this_section[p]}\n============================================================================================\n")
+                for z in range(len(zones_in_this_section)):
+                    debug_file.write(f"    Zone {z}: {[tuple(point) for point in section_points[p][z]]}\n")
+                    # Note the [tuple(point) for point in section_points[p][z]] to format each tuple correctly
+    
+    return allowable_points
+
 
 # =================================================================================================
 # 
@@ -932,7 +966,7 @@ chokepoints = find_chokepoints(board_obstacles)
 deadends = find_deadends(board_obstacles, chokepoints)
 print("\nchokepoints: ", chokepoints)
 print("deadends (", len(deadends), "): ", deadends)
-zones = get_zones(board_obstacles, deadends)
+zones = get_zones_of_board(board_obstacles, deadends)
 # for z in zones:
 #     print(z)
 
@@ -992,15 +1026,15 @@ heroes = init_heroes()
 
 loop(board_obstacles, board_pos, zones, heroes)
 
-sections = get_sections(zones)
+sections = get_sections_in_zones(zones)
 print(sections)
 
 print("================================================================")
-paths = get_paths(1, zones)
+paths = get_paths_in_section(1, zones)
 # print("paths:", paths, "\n")
 
-sub_zones = get_zones_sub(1, zones)
-for z in sub_zones:
+zones_section1 = get_zones_in_section(1, zones)
+for z in zones_section1:
     print(z)
 print("\n")
 
@@ -1009,17 +1043,24 @@ my_main_hero_end_zone = 25
 my_main_hero_zone = 9
 my_alt_hero_zone = 19
 
-my_main_path_id = get_path(paths, my_main_hero_start_zone,my_main_hero_end_zone)
-print("main path id: ", my_main_path_id, ": ", paths[my_main_path_id])
+my_main_path = get_path_from_start_to_end(paths, my_main_hero_start_zone,my_main_hero_end_zone)
+print("main path id: ", my_main_path)
 print("main hero starting zone id:", my_main_hero_zone)
 
-allowable_points = get_points_main(sub_zones, my_main_path_id, my_main_hero_zone)
-print("\nmain allowable_points:\n", allowable_points)
+allowable_points_main = get_points_main(zones_section1, my_main_path, my_main_hero_zone)
+print("\nmain allowable_points:\n", allowable_points_main)
 
-my_alt_path_id = get_path(paths, my_main_hero_start_zone, my_alt_hero_zone)
+my_alt_path = get_path_from_start_to_end(paths, my_main_hero_start_zone, my_alt_hero_zone)
 
-print("\nalt path id: ", my_alt_path_id, ": ", paths[my_alt_path_id])
+print("\nalt path id: ", my_alt_path)
 print("alt hero starting zone id:", my_alt_hero_zone)
 
-allowable_points = get_points_alt(sub_zones, my_main_path_id, my_alt_path_id, my_alt_hero_zone)
-print("\nAlt allowable_points:\n", allowable_points)
+allowable_points_alt = get_points_alt(zones_section1, my_main_path, my_alt_path, my_alt_hero_zone)
+print("\nAlt allowable_points:\n", allowable_points_alt)
+
+main_list = get_allowable_points(sections, zones, paths)
+
+
+for p in main_list[1][575][20]:
+    print(p)
+
