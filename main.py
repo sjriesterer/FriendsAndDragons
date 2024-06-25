@@ -656,17 +656,18 @@ def get_paths_in_section(section: int, zones: list[Zone]) -> list[list[int]]:
 #     return None  # Return None if no such path is found
 
 # =================================================================================================
-# Gets the index ID of the path in paths where start_zone is the first and end_zone is the last
+# Gets the path where start_zone is the first and end_zone is the last
 def get_path_from_start_to_end(paths: list[list[int]], start_zone: int, end_zone: int) -> list[int] | None:
     for p in paths:
         if p[0] == start_zone and p[-1] == end_zone:
             return p
     return None
 
-    # for index, path in enumerate(paths):
-    #     if path[0] == start_zone and path[-1] == end_zone:
-    #         return path
-    # return None  # Return None if no such path is found
+def get_path_id(paths, start_zone, end_zone):
+    for index, path in enumerate(paths):
+        if path[0] == start_zone and path[-1] == end_zone:
+            return index
+    return None  # Return None if no such path is found
 
 # =================================================================================================
 # Gets the zone id of the point given
@@ -850,6 +851,17 @@ def get_next_deadend_zone(zone_id, path: list[int], zones: list[Zone]):
 
 # =================================================================================================
 # 
+
+class Allowable_Points:
+    def __init__(self):
+        self.section = 0
+        self.main_path_id = 0
+        self.main_path = []
+        self.alt_path_id = None
+        self.alt_path = []
+        self.zone_id = 0
+        self.points = []
+
 def get_allowable_points(all_sections: list[int], all_zones: list[Zone], all_paths: list[list[int]]) -> list[list[list[list[tuple]]]]:
     allowable_points = []
 
@@ -864,17 +876,27 @@ def get_allowable_points(all_sections: list[int], all_zones: list[Zone], all_pat
             pivot_start_zone = path[0]
             
             for z in range(len(zones_in_this_section)):
-                zone_points = []
+                zone_points: Allowable_Points = Allowable_Points()
                 zone = zones_in_this_section[z]
                 current_zone_id = zone.id
                 
                 if current_zone_id in path:
                     points = get_points_main(zones_in_this_section, path, current_zone_id)  # Replace with your logic
+                    zone_points.alt_path = None
+                    zone_points.alt_path = None
                 else:
+                    alt_path_id = get_path_id(all_paths, pivot_start_zone, current_zone_id)
                     alt_path = get_path_from_start_to_end(paths_in_this_section, pivot_start_zone, current_zone_id)  # Replace with your logic
                     points = get_points_alt(zones_in_this_section, path, alt_path, current_zone_id)  # Replace with your logic
-                
-                zone_points.extend(points)  # Extend zone_points with tuples of points
+                    zone_points.alt_path = alt_path_id
+                    zone_points.alt_path = alt_path
+
+                zone_points.zone_id = current_zone_id
+                zone_points.section = s
+                zone_points.main_path_id = p
+                zone_points.main_path = all_paths[p]
+                zone_points.points.extend(points)
+                # zone_points.extend(points)  # Extend zone_points with tuples of points
                 
                 path_points.append(zone_points)  # Append zone_points to path_points
             
@@ -882,18 +904,7 @@ def get_allowable_points(all_sections: list[int], all_zones: list[Zone], all_pat
         
         allowable_points.append(section_points)  # Append section_points to allowable_points
     
-    # Writing debug information to debug_log.txt
-    with open("logs/debug_log.txt", "w") as debug_file:
-        for s in range(len(all_sections)):
-            debug_file.write(f"Section {s}: ====================================\n")
-            for p in range(len(paths_in_this_section)):
-                debug_file.write(f"============================================================================================\n  S: {s} : Path {p}: {paths_in_this_section[p]}\n============================================================================================\n")
-                for z in range(len(zones_in_this_section)):
-                    debug_file.write(f"    Zone {z}: {[tuple(point) for point in section_points[p][z]]}\n")
-                    # Note the [tuple(point) for point in section_points[p][z]] to format each tuple correctly
-    
     return allowable_points
-
 
 # =================================================================================================
 # 
@@ -1061,6 +1072,20 @@ print("\nAlt allowable_points:\n", allowable_points_alt)
 main_list = get_allowable_points(sections, zones, paths)
 
 
-for p in main_list[1][575][20]:
+for p in main_list[1][575][20].points:
     print(p)
 
+# Open the file for writing
+debug_file = open("logs/debug_log.txt", "w")
+
+# Iterate through each element in the 4D list and write to the file
+for s in range(len(main_list)):
+    for p in range(len(main_list[s])):
+        path_id = main_list[s][p][0].main_path_id
+        debug_file.write(f"\n******************************\nSection {s} - Path {path_id} = {paths[path_id]}\n******************************\n")
+        for z in range(len(main_list[s][p])):
+            zone_id = main_list[s][p][z].zone_id
+            debug_file.write(f"Zone {zone_id}: {main_list[s][p][z].points}\n")
+
+# Close the file
+debug_file.close()
