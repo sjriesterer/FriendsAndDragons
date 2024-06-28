@@ -173,29 +173,33 @@ Moveable heroes can move to some deadends considering the following:
     
 ## Move cases
 
-Hero on Main path:
+A hero can always move anywhere in his start zone if in the same section as the pivot. In addition:
 
-There are 2 cases:
+Hero on Main path (2 cases):
 
-Hero is currently on a deadend zone: Hero can move anywhere in his start zone, anywhere in previous zone, any connected DE in the previous zone (except his start zone)
+Hero starts on a deadend zone: 
+    If there is a previous zone:
+        Anywhere in previous zone
+        Any connected deadend in the previous zone (except his start zone)
 
-Hero on a nondeadend zone: Hero can move anywhere in his start zone, any connected DE (except the downstream DE)
+Hero starts on a nondeadend zone: 
+    Any connected deadend (except the downstream deadend)
 
 =================================================
-Hero on Alt path:
+Hero on Alt path (cases):
 
-There are 2 cases for the alt points:
-
-Case 1: Hero is currently on a deadend zone: Hero can move anywhere in his start zone and:
-    case 1a: previous zone on the alt path is a nondeadend zone not on the main path:
-        hero can move to any square in the previous zone
-        hero can move to any connected deadend zone to the previous zone except upstream from the previous zone on the alt path
+Case 1: Hero starts on a deadend zone: 
+    case 1a: previous zone on the alt path is a deadend zone:
+        <none>
     case 1b: previous zone on the alt path is a nondeadend zone on the main path:
         hero can move to any square in the previous zone
-        hero can move to any connected deadend zone to the previous zone except downstream from the previous zone on the main path
-    case 1c: previous zone on the alt path is a deadend zone:
-        <none>
-case 2: hero is currently on a nondeadend zone: Hero can move anywhere in his start zone and any connected deadend zone except upstream from the alt path
+        hero can move to any connected deadend zone to the previous zone (except downstream from the previous zone on the main path)
+    case 1c: previous zone on the alt path is a nondeadend zone not on the main path:
+        hero can move to any square in the previous zone
+        hero can move to any connected deadend zone to the previous zone (except upstream from the previous zone on the alt path)
+
+Case 2: Hero starts on a nondeadend zone: 
+    Any connected deadend zone (except upstream from the alt path)
 
 
 ## Damage Assessment
