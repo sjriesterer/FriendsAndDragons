@@ -514,12 +514,63 @@ def print_board(board):
     for col in range(len(board[0])):
         print(f'{col:2}', end='')
     print()
-    print(" ----------------")
+    print(" ---------------------------------")
 
     # Print board rows with row numbers
     for i, row in enumerate(board):
         print(f'{i:2} | ', end='')
         print(' '.join(row))
+
+# =================================================================================================
+def print_map(board, zones):
+    print("Zone Map:\n")
+    # Print column numbers
+    print('    ', end='')
+    for col in range(len(board[0])):
+        print(f'{col:2}', end=' ')
+    print()
+
+    print("------", end = "")
+    for i in range(len(board[0])):
+        print("---", end = "")
+    print("\n", end = "")
+
+    # Loop through the rows
+    for i in range(len(board)):
+        print(f'{i:2} | ', end='')
+
+        # Track which zones have been printed in this row
+        printed_zones = set()
+
+        # Loop through the columns
+        for j in range(len(board[i])):
+            found = False
+
+            # Check each zone
+            for zone in zones:
+                # Find the zone that contains the current board position
+                if (i, j) in zone.points and zone.id not in printed_zones:
+                    # Print the zone id as a 2-digit number
+                    print(f'{zone.id:02}', end=' ')
+                    found = True
+                    printed_zones.add(zone.id)
+                    break
+
+            # If no zone contains the current position, check for obstacle
+            if not found:
+                if board[i][j] == 'O':
+                    print('[]', end=' ')
+                else:
+                    print('..', end=' ')
+
+        print('|')
+
+    print("------", end = "")
+    for i in range(len(board[0])):
+        print("---", end = "")
+    print("\n")
+
+
 
 # =================================================================================================
 # HERO METHODS
@@ -733,41 +784,49 @@ def get_points_in_zone(zone: int, zones: list[Zone]) -> list[int] | None:
 # main_path = the id of the current main path of the pivot (from pivot start zone to current pivot point)
 # start_zone = the starting zone of the movable hero
 #TODO needs rigourous testing
-def get_points_main(zones: list[Zone], main_path_of_pivot: list[int], hero_start_zone: int):
+def get_points_main(zones: list[Zone], main_path_of_pivot: list[int], hero_start_zone_id: int):
     allowable_points = []
 
-    #TODO a hero on a deadend next to another deadend on the main path will be displaced! He 
-    # cannot stay in his start zone
-
-    # A movable hero can move anywhere in his current zone
-    points_in_current_zone = get_points_in_zone(hero_start_zone, zones)
-    if points_in_current_zone and not is_deadend_zone(hero_start_zone, zones):
+    # A movable hero can move anywhere in his current zone unless it is a DE
+    # because being on the main path of the pivot, he is forced off his DE to the previous zone
+    points_in_current_zone = get_points_in_zone(hero_start_zone_id, zones)
+    if points_in_current_zone and not is_deadend_zone(hero_start_zone_id, zones):
         allowable_points.extend(points_in_current_zone)
 
-    # Movable hero starts on a deadend zone
-    if is_deadend_zone(hero_start_zone, zones):
-        previous_zone_id = get_previous_zone_id(hero_start_zone, main_path_of_pivot)
+    # Hero starts on a deadend zone
+    if is_deadend_zone(hero_start_zone_id, zones):
+        previous_zone_id = get_previous_zone_id(hero_start_zone_id, main_path_of_pivot)
         if previous_zone_id is not None:
             previous_zone: Zone = next((z for z in zones if z.id == previous_zone_id), None)
             if previous_zone:
-                # Movable hero starts on deadend zone can move anywhere in the previous zone
+                # Hero can move anywhere in the previous zone
                 allowable_points.extend(previous_zone.points)
-                # Movable hero starts on deadend zone can move to previous zones connected deadend zones
-                # except his start zone
+                # Hero can move to previous zones connected deadend zones, with exceptions
                 connected_deadend_zones = get_connected_deadend_zones(previous_zone_id, zones)
+                restricted_zones = [hero_start_zone_id] # Cannot move to his start zone because it is a DE on the main path
+                # If the previous zone from the hero start is a DE
+                if is_deadend_zone(previous_zone_id, zones):
+                    previous_previous_zone_id = get_previous_zone_id(previous_zone_id, main_path_of_pivot)
+                    # If the previous zone from the previous zone from the hero start is a DE
+                    # This is describing a single row or column of DEs
+                    if previous_previous_zone_id and is_deadend_zone(previous_previous_zone_id, zones):
+                        # Cannot move to the DE prior to the DE the hero got displaced on because it is a single row/col of DEs
+                        restricted_zones.append(previous_previous_zone_id) 
                 for z_id in connected_deadend_zones:
-                    if z_id != hero_start_zone:
+                    if z_id not in restricted_zones:
                         zone: Zone = next((z for z in zones if z.id == z_id), None)
                         if zone:
-                            allowable_points.extend(zone.points)
+                            # Add all other connected DEs to the previous zone because they are allowed
+                            allowable_points.extend(zone.points) 
+
     # Movable hero starts on a nondeadend zone
     else:
-        current_zone: Zone = next((z for z in zones if z.id == hero_start_zone), None)
+        current_zone: Zone = next((z for z in zones if z.id == hero_start_zone_id), None)
         if current_zone:
             # Movable hero starts on nondeadend zone can move to any connected deadend zone of his
             # start zone except the downstream zone on the main path
-            connected_deadend_zones = get_connected_deadend_zones(hero_start_zone, zones)
-            next_deadend_zone_id = get_next_deadend_zone(hero_start_zone, main_path_of_pivot, zones) # downstream deadend zone
+            connected_deadend_zones = get_connected_deadend_zones(hero_start_zone_id, zones)
+            next_deadend_zone_id = get_next_deadend_zone(hero_start_zone_id, main_path_of_pivot, zones) # downstream deadend zone
             for z_id in connected_deadend_zones:
                 if z_id != next_deadend_zone_id:
                     zone = next((z for z in zones if z.id == z_id), None)
@@ -1017,6 +1076,7 @@ print("\nPositions:")
 print_board(board_pos)
 print("board_obstacles:\n", board_obstacles)
 
+
 # Obstacle board
 print("\n--------------------------------")
 print("\nObstacles:")
@@ -1028,6 +1088,8 @@ print("deadends (", len(deadends), "): ", deadends)
 zones = get_zones_of_board(board_obstacles, deadends)
 for z in zones:
     print(z)
+
+print_map(board_obstacles, zones)
 
 # # Obstacle board for lava walkers
 # print("\n--------------------------------")
@@ -1126,7 +1188,14 @@ debug_file = open("logs/debug_log.txt", "w")
 for s in range(len(main_list)):
     for p in range(len(main_list[s])):
         path_id = main_list[s][p][0].main_path_id
-        debug_file.write(f"\n******************************\nSection {s} - Path {path_id} = {paths[path_id]}\n******************************\n")
+        if path_id < 26:
+            path_char = chr(65 + path_id - 3)  # A = 0, B = 1, ..., Z = 25
+        else:
+            first_char = chr(65 + (path_id - 26 - 3) // 26)  # A-Z
+            second_char = chr(65 + (path_id - 26 - 3) % 26)  # A-Z
+            path_char = f"{first_char}{second_char}"  # AA, AB, ...
+        
+        debug_file.write(f"\n******************************\nSection {s} - Path {path_char} : {path_id} = {paths[path_id]}\n******************************\n")
         for z in range(len(main_list[s][p])):
             zone_id = main_list[s][p][z].zone_id
             debug_file.write(f"Zone {zone_id}: {main_list[s][p][z].points}\n")
