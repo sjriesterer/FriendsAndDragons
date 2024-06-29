@@ -524,9 +524,12 @@ def print_board(board):
 # =================================================================================================
 def print_map(board, zones):
     print("Zone Map:\n")
+
     # Print column numbers
     print('    ', end='')
     for col in range(len(board[0])):
+        if col == 10:
+            print(" ", end= "")
         print(f'{col:2}', end=' ')
     print()
 
@@ -659,23 +662,6 @@ def get_hero(hero_name):
 # =================================================================================================
 # LOOP METHODS
 # =================================================================================================
-class Section():
-    paths = []
-
-class Path():
-    zones = []
-
-class Zone2():
-    maps = []
-
-class Map():
-    points = []
-
-
-def init_master_list():
-    main_list: list[Section] = []
-
-    return main_list
 
 
 # =================================================================================================
@@ -784,7 +770,7 @@ def get_points_in_zone(zone: int, zones: list[Zone]) -> list[int] | None:
 # main_path = the id of the current main path of the pivot (from pivot start zone to current pivot point)
 # start_zone = the starting zone of the movable hero
 #TODO needs rigourous testing
-def get_points_main(zones: list[Zone], main_path_of_pivot: list[int], hero_start_zone_id: int):
+def get_points_main_old(zones: list[Zone], main_path_of_pivot: list[int], hero_start_zone_id: int):
     allowable_points = []
 
     # A movable hero can move anywhere in his current zone unless it is a DE
@@ -802,7 +788,7 @@ def get_points_main(zones: list[Zone], main_path_of_pivot: list[int], hero_start
                 # Hero can move anywhere in the previous zone
                 allowable_points.extend(previous_zone.points)
                 # Hero can move to previous zones connected deadend zones, with exceptions
-                connected_deadend_zones = get_connected_deadend_zones(previous_zone_id, zones)
+                connected_deadend_zones = get_connected_deadend_zone_ids(previous_zone_id, zones)
                 restricted_zones = [hero_start_zone_id] # Cannot move to his start zone because it is a DE on the main path
                 # If the previous zone from the hero start is a DE
                 if is_deadend_zone(previous_zone_id, zones):
@@ -825,8 +811,8 @@ def get_points_main(zones: list[Zone], main_path_of_pivot: list[int], hero_start
         if current_zone:
             # Movable hero starts on nondeadend zone can move to any connected deadend zone of his
             # start zone except the downstream zone on the main path
-            connected_deadend_zones = get_connected_deadend_zones(hero_start_zone_id, zones)
-            next_deadend_zone_id = get_next_deadend_zone(hero_start_zone_id, main_path_of_pivot, zones) # downstream deadend zone
+            connected_deadend_zones = get_connected_deadend_zone_ids(hero_start_zone_id, zones)
+            next_deadend_zone_id = get_next_deadend_zone_id(hero_start_zone_id, main_path_of_pivot, zones) # downstream deadend zone
             for z_id in connected_deadend_zones:
                 if z_id != next_deadend_zone_id:
                     zone = next((z for z in zones if z.id == z_id), None)
@@ -841,62 +827,112 @@ def get_points_main(zones: list[Zone], main_path_of_pivot: list[int], hero_start
     return allowable_points
 
 # =================================================================================================
+# Gets a list of all allowable points for a moveable hero who is on the main path of the pivot
+# zones = a list of Zone objects for the given board (should only be 1 section)
+# main_path = a list of zones the pivot moves through
+# start_zone = the starting zone of the movable hero
+def get_points_main(zones: list[Zone], main_path_of_pivot: list[int], hero_start_zone_id: int):
+    allowable_points = []
+    allowable_zones = []
+
+    # A movable hero can move anywhere in his current zone unless it is a DE
+    # because being on the main path of the pivot, he is forced off his DE to the previous zone
+    if not is_deadend_zone(hero_start_zone_id, zones):
+        allowable_zones.append(hero_start_zone_id)
+
+    # Hero starts on a deadend zone
+    if is_deadend_zone(hero_start_zone_id, zones):
+        previous_zone_id = get_previous_zone_id(hero_start_zone_id, main_path_of_pivot)
+        if previous_zone_id is not None:
+            # Hero can move anywhere in the previous zone
+            allowable_zones.append(previous_zone_id)
+            # Hero can move to previous zones connected deadend zones, with exceptions
+            connected_deadend_zones = get_connected_deadend_zone_ids(previous_zone_id, zones)
+            connected_deadend_zones.remove(hero_start_zone_id) # Cannot move to his start zone because it is a DE on the main path
+            # If the previous zone from the hero start is a DE
+            if is_deadend_zone(previous_zone_id, zones):
+                previous_previous_zone_id = get_previous_zone_id(previous_zone_id, main_path_of_pivot)
+                # If the previous zone from the previous zone from the hero start is a DE
+                # This is describing a single row or column of DEs
+                if previous_previous_zone_id and is_deadend_zone(previous_previous_zone_id, zones):
+                    # Cannot move to the DE prior to the DE the hero got displaced on because it is a single row/col of DEs
+                    connected_deadend_zones.remove(previous_previous_zone_id)
+            allowable_zones.extend(connected_deadend_zones)
+
+    # Movable hero starts on a nondeadend zone
+    else:
+        # Movable hero starts on nondeadend zone can move to any connected deadend zone of his
+        # start zone except the downstream zone on the main path
+        connected_deadend_zones = get_connected_deadend_zone_ids(hero_start_zone_id, zones)
+        next_deadend_zone_id = get_next_deadend_zone_id(hero_start_zone_id, main_path_of_pivot, zones) # downstream deadend zone
+        if next_deadend_zone_id:
+            connected_deadend_zones.remove(next_deadend_zone_id)
+        allowable_zones.extend(connected_deadend_zones)
+
+    # Add the points from the allowable zones to the list
+    for z in allowable_zones:
+        allowable_points.extend(get_points_in_zone(z, zones))
+
+    # Remove dups
+    unique_points = remove_duplicates(allowable_points)
+
+    # Sort the resulting list of points by row and then by column
+    allowable_points = sorted(unique_points, key=lambda p: (p[0], p[1]))
+
+    return allowable_points
+
+# =================================================================================================
 # Gets a list of all allowable points for a moveable hero on an alternate path of the pivot
 # zones = a list of Zone objects for the given board (should only be 1 section)
 # main_path = the id of the current main path of the pivot (from pivot start zone to current pivot point)
 # alt_path = the id of the alternate path of the pivot (from pivot start zone to hero start zone)
 # start_zone = the starting zone of the movable hero
 #TODO needs rigourous testing
-def get_points_alt(zones: list[Zone], main_path_of_pivot: list[int], alt_path_of_pivot: list[int], hero_start_zone: int):
+def get_points_alt(zones: list[Zone], main_path_of_pivot: list[int], alt_path_of_pivot: list[int], hero_start_zone_id: int):
     allowable_points = []  # Allow duplicates
+    allowable_zones = []
 
     # A movable hero can move anywhere in his current zone
-    points_in_current_zone = get_points_in_zone(hero_start_zone, zones)
-    if points_in_current_zone:
-        allowable_points.extend(points_in_current_zone)
+    allowable_zones.append(hero_start_zone_id)
 
     # Movable hero starts on a deadend zone
-    if is_deadend_zone(hero_start_zone, zones):
-        previous_alt_zone_id = get_previous_zone_id(hero_start_zone, alt_path_of_pivot)
-        if previous_alt_zone_id:
-            previous_alt_zone: Zone = next((z for z in zones if z.id == previous_alt_zone_id), None)
-            if previous_alt_zone:
-                # If the previous zone is a deadend:
-                if previous_alt_zone.is_deadend:
-                    pass # No allowable points in the pervious zone
-                # If the previous zone is not a deadend:
+    if is_deadend_zone(hero_start_zone_id, zones):
+        previous_zone_id = get_previous_zone_id(hero_start_zone_id, alt_path_of_pivot)
+        if previous_zone_id is not None:
+            # If the previous zone is a deadend:
+            if is_deadend_zone(previous_zone_id, zones):
+                pass # No allowable points in the pervious zone
+            else: # If the previous zone is not a deadend
+                # Hero starts on deadend zone can move to the previous nondeadend zone
+                allowable_zones.append(previous_zone_id)
+                connected_deadend_zones = get_connected_deadend_zone_ids(previous_zone_id, zones)
+                # Previous nondeadend zone is on the main path
+                if zone_is_on_main_path(previous_zone_id, main_path_of_pivot):
+                    restricted_zone_id = get_next_deadend_zone_id(previous_zone_id, main_path_of_pivot, zones) # Downstream
+                # Previous nondeadend zone is not on the main path
                 else:
-                    # Hero starts on deadend zone can move to the previous nondeadend zone
-                    allowable_points.extend(previous_alt_zone.points)
-                    connected_deadend_zones = get_connected_deadend_zones(previous_alt_zone_id, zones)
-                    # Get the restricted zone:
-                    # Previous nondeadend zone is on the main path
-                    if zone_is_on_main_path(previous_alt_zone_id, main_path_of_pivot):
-                        restricted_zone = get_next_deadend_zone(previous_alt_zone_id, main_path_of_pivot, zones) # Downstream
-                    # Previous nondeadend zone is not on the main path
-                    else:
-                        restricted_zone = get_previous_deadend_zone(previous_alt_zone_id, alt_path_of_pivot, zones) # Upstream
+                    restricted_zone_id = get_previous_deadend_zone_id(previous_zone_id, alt_path_of_pivot, zones) # Upstream
 
-                    # Movable hero starts on deadend zone can move to any connected deadend zone of the
-                    # previous nondeadend zone except the restricted zone
-                    for z_id in connected_deadend_zones:
-                        if z_id != restricted_zone:
-                            zone = next((z for z in zones if z.id == z_id), None)
-                            if zone:
-                                allowable_points.extend(zone.points)
+                # Add the allowable connected deadend zones
+                if restricted_zone_id:
+                    connected_deadend_zones.remove(restricted_zone_id)
+
+                allowable_zones.extend(connected_deadend_zones)
 
     # Movable hero starts on a nondeadend zone
     else:
         # Movable hero starts on nondeadend zone can move to any connected deadend zone of his
         # start zone except the upstream zone on the alt path
-        connected_deadend_zones = get_connected_deadend_zones(hero_start_zone, zones)
-        restricted_zone = get_previous_deadend_zone(hero_start_zone, alt_path_of_pivot, zones) # Upstream zone on the alt path
-        for z_id in connected_deadend_zones:
-            if z_id != restricted_zone:
-                zone = next((z for z in zones if z.id == z_id), None)
-                if zone:
-                    allowable_points.extend(zone.points)
+        connected_deadend_zones = get_connected_deadend_zone_ids(hero_start_zone_id, zones)
+        restricted_zone_id = get_previous_deadend_zone_id(hero_start_zone_id, alt_path_of_pivot, zones)
+        connected_deadend_zones.remove(restricted_zone_id)
+        allowable_zones.extend(connected_deadend_zones)
 
+    # Add the points from the allowable zones to the list
+    for z in allowable_zones:
+        allowable_points.extend(get_points_in_zone(z, zones))
+
+    # Remove dups
     unique_points = remove_duplicates(allowable_points)
     
     # Sort the resulting list of points by row and then by column
@@ -929,7 +965,7 @@ def zone_is_on_main_path(zone_id, main_path: list[int]):
 
 # =================================================================================================
 # Get all connected deadend zones to the zone_id given
-def get_connected_deadend_zones(zone_id, zones: list[Zone]):
+def get_connected_deadend_zone_ids(zone_id, zones: list[Zone]) -> list[int]:
     connected_deadend_zones = []
     for z in zones:
         if z.id == zone_id:
@@ -940,7 +976,7 @@ def get_connected_deadend_zones(zone_id, zones: list[Zone]):
 
 # =================================================================================================
 # Returns the previous deadend zone prior to the zone_id on the path of zones given
-def get_previous_deadend_zone(zone_id, path: list[Zone], zones: list[Zone]):
+def get_previous_deadend_zone_id(zone_id, path: list[Zone], zones: list[Zone]) -> int | None:
     if zone_id in path:
         index_of_zone = path.index(zone_id)
         if index_of_zone <= 0:
@@ -952,7 +988,7 @@ def get_previous_deadend_zone(zone_id, path: list[Zone], zones: list[Zone]):
 
 # =================================================================================================
 # Returns the next deadend zone after the zone_id on the path of zones given
-def get_next_deadend_zone(zone_id, path: list[int], zones: list[Zone]):
+def get_next_deadend_zone_id(zone_id, path: list[int], zones: list[Zone]):
     if zone_id in path:
         index_of_zone = path.index(zone_id)
         if index_of_zone >= len(path) - 1:
