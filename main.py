@@ -22,32 +22,49 @@ inputs = Inputs()
 terrain = inputs.terrain
 positions = inputs.positions
 hero_inputs = inputs.heroes
+hero_terrains = inputs.hero_terrains
 
 # =================================================================================================
 # GLOBALS
 # =================================================================================================
 
-obstacle_codes = [Board.lava, Board.obstacle, Board.rubble, Board.water, Board.monster]
-obstacle_codes_lava = [Board.obstacle, Board.rubble, Board.water, Board.monster]
-obstacle_codes_water = [Board.lava, Board.obstacle, Board.rubble, Board.monster] 
-obstacle_codes_flying = [Board.obstacle, Board.monster]
-obstacle_codes_rubble = [Board.lava, Board.obstacle, Board.water, Board.monster]
-obstacles = [char.value for char in obstacle_codes]
-obstacles_lava = [char.value for char in obstacle_codes_lava]
-obstacles_water = [char.value for char in obstacle_codes_water]
-obstacles_flying = [char.value for char in obstacle_codes_flying]
-obstacles_rubble = [char.value for char in obstacle_codes_rubble]
+maps = []
 
-monster_codes = [Monsters.monster1, Monsters.monster2, Monsters.monster3, Monsters.monster4]
-monsters = [char.value for char in monster_codes]
+# =================================================================================================
+# Codes
+# =================================================================================================
 
-lava = 'L'
-water = 'W'
-rubble = 'R'
-ice = 'I'
-obstacle = 'O'
-empty_square = '.'
-monster = 'M'
+
+# Map Ids
+basic_map_id = Map.basic_map.value
+lava_map_id = Map.lava_map.value
+water_map_id = Map.water_map.value
+flying_map_id = Map.flying_map.value
+rubble_map_id = Map.rubble_map.value
+
+# Terrain codes
+lava_code = Board_Codes.lava_code.value
+water_code = Board_Codes.water_code.value
+rubble_code = Board_Codes.rubble_code.value
+ice_code = Board_Codes.lava_code.value
+obstacle_code = Board_Codes.obstacle_code.value
+empty_square_code = Board_Codes.empty_square_code.value
+monster_code = Board_Codes.monster_code.value
+
+# Lists of obstacle valid characters
+obstacle_basic_chrs = [Board_Codes.lava_code, Board_Codes.obstacle_code, Board_Codes.rubble_code, Board_Codes.water_code, Board_Codes.monster_code]
+obstacle_lava_chrs = [Board_Codes.obstacle_code, Board_Codes.rubble_code, Board_Codes.water_code, Board_Codes.monster_code]
+obstacle_water_chrs = [Board_Codes.lava_code, Board_Codes.obstacle_code, Board_Codes.rubble_code, Board_Codes.monster_code] 
+obstacle_flying_chrs = [Board_Codes.obstacle_code, Board_Codes.monster_code]
+obstacle_rubble_chrs = [Board_Codes.lava_code, Board_Codes.obstacle_code, Board_Codes.water_code, Board_Codes.monster_code]
+obstacles_basic_codes = [char.value for char in obstacle_basic_chrs]
+obstacles_lava_codes = [char.value for char in obstacle_lava_chrs]
+obstacles_water_codes = [char.value for char in obstacle_water_chrs]
+obstacles_flying_codes = [char.value for char in obstacle_flying_chrs]
+obstacles_rubble_codes = [char.value for char in obstacle_rubble_chrs]
+
+# Monster codes
+monster_codes = [Monsters_Codes.monster1.value, Monsters_Codes.monster2.value, Monsters_Codes.monster3.value, Monsters_Codes.monster4.value]
 
 # =================================================================================================
 # CLASSES
@@ -61,7 +78,7 @@ class Zone:
         self.connected_zones = []
         self.connected_deadend_zones = []
     def __str__(self):
-        return f'{self.id} : Section: {self.section}, Deadend: {self.is_deadend}, Connected: {self.connected_zones}, Deadends: {self.connected_deadend_zones}\n\tPoints: {self.points}'
+        return f'{self.id} : Section: {self.section}, IsDeadend: {self.is_deadend}, Connected Zones: {self.connected_zones}, Conn.Deadends: {self.connected_deadend_zones}\n\tPoints: {self.points}'
 
 class Allowable_Points:
     def __init__(self):
@@ -72,6 +89,15 @@ class Allowable_Points:
         self.alt_path = []
         self.zone_id = 0
         self.points = []
+
+class Map:
+    def __init__(self, id=0, name="", board=None, chokepoints=None, deadends=None, zones=None):
+        self.id = id
+        self.name = name
+        self.board = board if board is not None else []
+        self.chokepoints = chokepoints if chokepoints is not None else []
+        self.deadends = deadends if deadends is not None else []
+        self.zones = zones if zones is not None else []
 
 # =================================================================================================
 # INIT METHODS
@@ -90,12 +116,98 @@ def format_input(input):
     return new_input
 
 # =================================================================================================
+# 
+def init_maps() -> list[Map]:
+    maps: list[Map] = []
+
+    map_terrain = parse_input(format_input(terrain))
+    map_positions = parse_input(format_input(positions))
+    map_obstacles_basic = get_obstacle_board(map_terrain, map_positions, obstacles_basic_codes)
+    map_obstacles_lava = get_obstacle_board(map_terrain, map_positions, obstacles_lava_codes)
+    map_obstacles_water = get_obstacle_board(map_terrain, map_positions, obstacles_water_codes)
+    map_obstacles_flying = get_obstacle_board(map_terrain, map_positions, obstacles_flying_codes)
+    map_obstacles_rubble = get_obstacle_board(map_terrain, map_positions, obstacles_rubble_codes)
+
+    print("\nTerrain:")
+    print_map_plain(map_terrain)
+    print("\nPositions:")
+    print_map_plain(map_positions)
+    
+    # Basic Obstacle map
+    chokepoints_basic = find_chokepoints(map_obstacles_basic)
+    deadends_basic = find_deadends(map_obstacles_basic, chokepoints_basic)
+    zones_basic = get_zones_of_map(map_obstacles_basic, deadends_basic)
+    map_basic: Map = Map(basic_map_id, "Basic", map_obstacles_basic, chokepoints_basic, deadends_basic, zones_basic)
+
+    # print_map_details("Basic", map_obstacles_basic, zones_basic, chokepoints_basic, deadends_basic)
+
+    # Obstacle map for lava walkers
+    if count_obstacles(map_terrain, [lava_code]) == 0:
+        map_lava: Map = Map(lava_map_id, "Lava", map_obstacles_basic, chokepoints_basic, deadends_basic, zones_basic)
+    else:
+        chokepoints_lava = find_chokepoints(map_obstacles_lava)
+        print("map lava and chokepoints")
+        print_map_plain(map_obstacles_lava)
+        print(chokepoints_lava)
+
+        deadends_lava = find_deadends(map_obstacles_lava, chokepoints_lava)
+        print(deadends_lava)
+        zones_lava = get_zones_of_map(map_obstacles_lava, deadends_lava)
+        for z in zones_lava:
+            print(z)
+        map_lava: Map = Map(lava_map_id, "Lava", map_obstacles_lava, chokepoints_lava, deadends_lava, zones_lava)
+
+    # Obstacle map for water walkers
+    if count_obstacles(map_terrain, [water_code]) == 0:
+        map_water: Map = Map(lava_map_id, "Water", map_obstacles_basic, chokepoints_basic, deadends_basic, zones_basic)
+    else:
+        chokepoints_water = find_chokepoints(map_obstacles_water)
+        deadends_water = find_deadends(map_obstacles_water, chokepoints_water)
+        zones_water = get_zones_of_map(map_obstacles_water, deadends_water)
+        map_water: Map = Map(water_map_id, "Water", map_obstacles_water, chokepoints_water, deadends_water, zones_water)
+
+    # Obstacle map for flying heroes
+    if count_obstacles(map_terrain, [lava_code, water_code, rubble_code]) == 0:
+        map_flying: Map = Map(lava_map_id, "Flying", map_obstacles_basic, chokepoints_basic, deadends_basic, zones_basic)
+    else:
+        chokepoints_flying = find_chokepoints(map_obstacles_flying)
+        deadends_flying = find_deadends(map_obstacles_flying, chokepoints_flying)
+        zones_flying = get_zones_of_map(map_obstacles_flying, deadends_flying)
+        map_flying: Map = Map(flying_map_id, "Flying", map_obstacles_flying, chokepoints_flying, deadends_flying, zones_flying)
+
+    # Obstacle map for rubble walkers
+    if count_obstacles(map_terrain, [rubble_code]) == 0:
+        map_rubble: Map = Map(rubble_map_id, "Rubble", map_obstacles_basic, chokepoints_basic, deadends_basic, zones_basic)
+    else:
+        chokepoints_rubble = find_chokepoints(map_obstacles_rubble)
+        deadends_rubble = find_deadends(map_obstacles_rubble, chokepoints_rubble)
+        zones_rubble = get_zones_of_map(map_obstacles_rubble, deadends_rubble)
+        map_rubble: Map = Map(rubble_map_id, "Rubble", map_obstacles_rubble, chokepoints_rubble, deadends_rubble, zones_rubble)
+
+    maps.extend([map_basic, map_lava, map_water, map_flying, map_rubble])
+
+    return maps
+
+# =================================================================================================
+# 
+def count_obstacles(board: list[list[chr]], chars: list[chr]) -> int:
+    # Convert the list of characters to lowercase once
+    lower_chars = [c.lower() for c in chars]
+    count = 0
+    for row in board:
+        for char in row:
+            if char.lower() in lower_chars:
+                count += 1
+    return count
+
+# =================================================================================================
 # VALIDATION METHODS
 # =================================================================================================
 # Function to check if a point is within the bounds of the board
 def within_bounds(row, col, rows, cols):
     return 0 <= row < rows and 0 <= col < cols
 
+# =================================================================================================
 def is_valid_position(board, row, col):
     return 0 <= row < len(board) and 0 <= col < len(board[0])
 
@@ -104,12 +216,25 @@ def is_valid_point(board, point):
     return 0 <= point[0] < len(board) and 0 <= point[1] < len(board[0])
 
 # =================================================================================================
-def is_valid_move(board, visited, row, col, designated_point):
+# def is_valid_move(board, visited, row, col, designated_point):
+#     rows = len(board)
+#     cols = len(board[0])
+#     return (0 <= row < rows and 0 <= col < cols and
+#             board[row][col] != 'O' and not visited[row][col] and
+#             (row, col) != designated_point)
+
+def is_valid_move(board, visited, row, col, chokepoint) -> bool:
     rows = len(board)
     cols = len(board[0])
-    return (0 <= row < rows and 0 <= col < cols and
-            board[row][col] != 'O' and not visited[row][col] and
-            (row, col) != designated_point)
+    # Check if the move is within the board boundaries
+    if not (0 <= row < rows and 0 <= col < cols):
+        return False
+    # Check if the position is the chokepoint or already visited
+    if visited[row][col] or (row, col) == chokepoint:
+        return False
+    # Check if the position is not an obstacle
+    return board[row][col] != obstacle_code
+
 # =================================================================================================
 #
 def validate_inputs():
@@ -125,29 +250,29 @@ def validate_inputs():
 def square_is(board, row, col, type):
     return board[row][col] == type
 def square_is_empty(board, row, col):
-    return board[row][col] == empty_square
+    return board[row][col] == empty_square_code
 def square_is_obstacle(board, row, col):
-    return board[row][col] == obstacle
+    return board[row][col] == obstacle_code
 # =================================================================================================
 # Diagnoal obstacles check
 def obstacle_above_left(board, row, col):
-    return board[row-1][col-1] == obstacle
+    return board[row-1][col-1] == obstacle_code
 def obstacle_above_right(board, row, col):
-    return board[row-1][col+1] == obstacle
+    return board[row-1][col+1] == obstacle_code
 def obstacle_below_left(board, row, col):
-    return board[row+1][col-1] == obstacle
+    return board[row+1][col-1] == obstacle_code
 def obstacle_below_right(board, row, col):
-    return board[row+1][col+1] == obstacle
+    return board[row+1][col+1] == obstacle_code
 # =================================================================================================
 # Empty squares check
 def empty_square_left(board, row, col):
-    return board[row][col-1] == empty_square
+    return board[row][col-1] == empty_square_code
 def empty_square_right(board, row, col):
-    return board[row][col+1] == empty_square
+    return board[row][col+1] == empty_square_code
 def empty_square_above(board, row, col):
-    return board[row-1][col] == empty_square
+    return board[row-1][col] == empty_square_code
 def empty_square_below(board, row, col):
-    return board[row+1][col] == empty_square
+    return board[row+1][col] == empty_square_code
 def empty_square_left_and_right(board, row, col):
     return empty_square_left(board, row, col) and empty_square_right(board, row, col)
 def empty_square_above_and_below(board, row, col):
@@ -155,13 +280,13 @@ def empty_square_above_and_below(board, row, col):
 # =================================================================================================
 # Obstacles check
 def obstacle_left(board, row, col):
-    return board[row][col-1] == obstacle
+    return board[row][col-1] == obstacle_code
 def obstacle_right(board, row, col):
-    return board[row][col+1] == obstacle
+    return board[row][col+1] == obstacle_code
 def obstacle_above(board, row, col):
-    return board[row-1][col] == obstacle
+    return board[row-1][col] == obstacle_code
 def obstacle_below(board, row, col):
-    return board[row+1][col] == obstacle
+    return board[row+1][col] == obstacle_code
 def obstacle_left_and_right(board, row, col):
     return obstacle_left(board, row, col) and obstacle_right(board, row, col)
 def obstacle_above_and_below(board, row, col):
@@ -196,7 +321,7 @@ def is_in_middle(board, row, col):
 # PATH & BOARD METHODS
 # =================================================================================================
 # Checks if the chokepoint is a deadend 
-def is_deadend(board, chokepoints, chokepoint):
+def is_deadend(board: list[list[chr]], chokepoint: tuple):
     row, col = chokepoint
     left = (row, col-1)
     right = (row, col+1)
@@ -309,36 +434,101 @@ def is_deadend(board, chokepoints, chokepoint):
 def is_cardinally_adjacent(point1, point2):
     return (abs(point1[0] - point2[0]) == 1 and point1[1] == point2[1]) or (abs(point1[1] - point2[1]) == 1 and point1[0] == point2[0])
 
-# =================================================================================================
-# True if a path exists on the board from start to end and not passing through the chokepoint
-def does_path_exist(board, start, end, chokepoint):
-    rows = len(board)
-    cols = len(board[0])
-    visited = [[False for _ in range(cols)] for _ in range(rows)]
+# # =================================================================================================
+# # True if a path exists on the board from start to end and not passing through the chokepoint
+# def does_path_exist2(board: list[list[chr]], start: tuple, end: tuple, chokepoint: tuple) -> bool:
+#     rows = len(board)
+#     cols = len(board[0])
+#     visited = [[False for _ in range(cols)] for _ in range(rows)]
     
-    def backtrack(row, col):
+#     def backtrack(row, col):
+#         if (row, col) == end:
+#             return True
+#         visited[row][col] = True
+        
+#         directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+#         for dr, dc in directions:
+#             new_row, new_col = row + dr, col + dc
+#             if is_valid_move(board, visited, new_row, new_col, chokepoint):
+#                 if backtrack(new_row, new_col):
+#                     return True
+                
+#         visited[row][col] = False
+#         return False
+    
+#     start_row, start_col = start
+#     return backtrack(start_row, start_col)
+
+# # =================================================================================================
+# def does_path_exist3(board: list[list[chr]], start: tuple[int, int], end: tuple[int, int], chokepoint: tuple[int, int]) -> bool:
+#     rows, cols = len(board), len(board[0])
+#     visited = [[False for _ in range(cols)] for _ in range(rows)]
+#     count = 0
+
+#     def backtrack(row, col, count) -> bool:
+#         count = count + 1
+#         # print(count)
+#         # Check if we've reached the end point
+#         if (row, col) == end:
+#             return True
+#         # Mark the current position as visited
+#         visited[row][col] = True
+        
+#         # Define possible movement directions (right, down, left, up)
+#         directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+#         for dr, dc in directions:
+#             new_row, new_col = row + dr, col + dc
+#             if is_valid_move(board, visited, new_row, new_col, chokepoint):
+#                 if backtrack(new_row, new_col, count):
+#                     return True
+        
+#         # Unmark the current position (backtracking)
+#         visited[row][col] = False
+#         return False
+
+#     start_row, start_col = start
+#     return backtrack(start_row, start_col, count)
+
+def does_path_exist(board: list[list[chr]], start: tuple[int, int], end: tuple[int, int], chokepoint: tuple[int, int]) -> bool:
+    rows, cols = len(board), len(board[0])
+    visited = [[False for _ in range(cols)] for _ in range(rows)]
+
+    def is_valid_move(board, visited, row, col, chokepoint) -> bool:
+        # Check if the move is within the board boundaries
+        if not (0 <= row < rows and 0 <= col < cols):
+            return False
+        # Check if the position is the chokepoint or already visited
+        if visited[row][col] or (row, col) == chokepoint:
+            return False
+        # Check if the position is not an obstacle
+        return board[row][col] != 'O'
+    
+    def backtrack(row, col) -> bool:
+        # Check if we've reached the end point
         if (row, col) == end:
             return True
+        # Mark the current position as visited
         visited[row][col] = True
         
+        # Define possible movement directions (right, down, left, up)
         directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
         for dr, dc in directions:
             new_row, new_col = row + dr, col + dc
             if is_valid_move(board, visited, new_row, new_col, chokepoint):
                 if backtrack(new_row, new_col):
                     return True
-                
-        visited[row][col] = False
+        
+        # No need to unmark the current position (backtracking)
         return False
-    
+
     start_row, start_col = start
     return backtrack(start_row, start_col)
 
 # =================================================================================================
 # Checks if the point is a chokepoint
-def is_chokepoint(board, row, col):
+def is_chokepoint(board: list[list[chr]], row: int, col: int) -> bool:
     # Ensure the current cell is an empty square
-    if board[row][col] != empty_square:
+    if board[row][col] != empty_square_code:
         return False
 
     # Define the conditions for different types of chokepoints
@@ -367,7 +557,7 @@ def is_chokepoint(board, row, col):
 
 # =================================================================================================
 # Returns a list of zones based on the board and deadends
-def get_zones_of_board(board, deadends):
+def get_zones_of_map(board: list[list[chr]], deadends: list[tuple]) -> list[Zone]:
     rows, cols = len(board), len(board[0])
     directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
     deadends_set = set(deadends)
@@ -418,7 +608,7 @@ def get_zones_of_board(board, deadends):
     # Get the points in the zones
     for r in range(rows):
         for c in range(cols):
-            if board[r][c] == empty_square and (r, c) not in visited:
+            if board[r][c] == empty_square_code and (r, c) not in visited:
                 if (r, c) in deadends_set:
                     zones_pre.append([(r, c)])  # Add deadend as individual zone
                 else:
@@ -464,7 +654,7 @@ def get_zones_of_board(board, deadends):
     return zones
 
 # =================================================================================================
-def find_chokepoints(board):
+def find_chokepoints(board) -> list[tuple]:
     chokepoints = []
     for row in range(len(board)):
         for col in range(len(board[0])):
@@ -474,106 +664,36 @@ def find_chokepoints(board):
 
 # =================================================================================================
 # Evaluates both boards and identifies obstacles into one board
-def get_obstacle_board(board_terrain, board_pos, obstacles):
+def get_obstacle_board(board_terrain: list[list[chr]], board_pos: list[list[chr]], obstacles: list[chr]) -> list[list[str]]:
     # Determine the size of the boards
     rows = len(board_terrain)
     cols = len(board_terrain[0])
 
     # Create an empty board for the final output
-    final_board = [[empty_square for _ in range(cols)] for _ in range(rows)]
+    final_board = [[empty_square_code for _ in range(cols)] for _ in range(rows)]
     
     # Iterate through each position in the boards
     for i in range(rows):
         for j in range(cols):
             # Check if the terrain board has an obstacle
             if board_terrain[i][j] in obstacles:
-                final_board[i][j] = obstacle
+                final_board[i][j] = obstacle_code
             # Check if the position board has a monster character
-            elif board_pos[i][j] in monsters:
-                final_board[i][j] = obstacle
+            elif board_pos[i][j] in monster_codes:
+                final_board[i][j] = obstacle_code
             # Otherwise, keep the square empty
             else:
-                final_board[i][j] = empty_square
+                final_board[i][j] = empty_square_code
     
     return final_board
 
 # =================================================================================================
-def find_deadends(board, chokepoints):
-    barriers = []
+def find_deadends(board: list[list[chr]], chokepoints: tuple) -> list[tuple]:
+    obstacles = []
     for chokepoint in chokepoints:
-        if is_deadend(board, chokepoints, chokepoint):
-            barriers.append(chokepoint)
-    return barriers
-
-# =================================================================================================
-# PRINT METHODS
-# =================================================================================================
-def print_board(board):
-    # Print column numbers
-    print('    ', end='')
-    for col in range(len(board[0])):
-        print(f'{col:2}', end='')
-    print()
-    print(" ---------------------------------")
-
-    # Print board rows with row numbers
-    for i, row in enumerate(board):
-        print(f'{i:2} | ', end='')
-        print(' '.join(row))
-
-# =================================================================================================
-def print_map(board, zones):
-    print("Zone Map:\n")
-
-    # Print column numbers
-    print('    ', end='')
-    for col in range(len(board[0])):
-        if col == 10:
-            print(" ", end= "")
-        print(f'{col:2}', end=' ')
-    print()
-
-    print("------", end = "")
-    for i in range(len(board[0])):
-        print("---", end = "")
-    print("\n", end = "")
-
-    # Loop through the rows
-    for i in range(len(board)):
-        print(f'{i:2} | ', end='')
-
-        # Track which zones have been printed in this row
-        printed_zones = set()
-
-        # Loop through the columns
-        for j in range(len(board[i])):
-            found = False
-
-            # Check each zone
-            for zone in zones:
-                # Find the zone that contains the current board position
-                if (i, j) in zone.points and zone.id not in printed_zones:
-                    # Print the zone id as a 2-digit number
-                    print(f'{zone.id:02}', end=' ')
-                    found = True
-                    printed_zones.add(zone.id)
-                    break
-
-            # If no zone contains the current position, check for obstacle
-            if not found:
-                if board[i][j] == 'O':
-                    print('[]', end=' ')
-                else:
-                    print('..', end=' ')
-
-        print('|')
-
-    print("------", end = "")
-    for i in range(len(board[0])):
-        print("---", end = "")
-    print("\n")
-
-
+        if is_deadend(board, chokepoint):
+            obstacles.append(chokepoint)
+    return obstacles
 
 # =================================================================================================
 # HERO METHODS
@@ -589,20 +709,25 @@ def get_hero_pos(board, hero_id):
 
 # =================================================================================================
 # 
-def init_heroes():
+def init_heroes() -> list[Hero]:
     heroes = []
     id = 0
     for hero in hero_inputs:
-        h = get_hero(hero)
-        h.id = id
-        h.starting_point = get_hero_pos(positions, id)
-        h.current_point = h.starting_point
-        heroes.append(h)
+        new_hero = get_hero(hero)
+        new_hero.id = id
+        new_hero.starting_point = get_hero_pos(positions, id)
+        new_hero.current_point = new_hero.starting_point
+        new_hero.board_map_id = hero_terrains[id]
+        new_hero.board_map = maps[hero_terrains[id]]
+
+
+        
+        heroes.append(new_hero)
         id = id + 1
     return heroes
 
 # =================================================================================================
-def get_hero(hero_name):
+def get_hero(hero_name) -> Hero:
     name = hero_name.lower()
     # melee4_heroes = ['assassin', 'knight']
     # melee8_heroes = ['monk', 'rouge', 'barbarian']
@@ -611,53 +736,53 @@ def get_hero(hero_name):
     # magic4_heroes = ['mage']
     # magic8_heroes = ['elementalist']
 
-    hero = Hero()
-    hero.name = hero_name
+    new_hero = Hero()
+    new_hero.name = hero_name
 
     if name == 'monk':
-        hero.attack_type = 1
+        new_hero.attack_type = 1
     elif name == 'barbarian':
-        hero.attack_type = 1
+        new_hero.attack_type = 1
     elif name == 'assassin':
-        hero.attack_type = 1
+        new_hero.attack_type = 1
     elif name == 'rouge':
-        hero.attack_type = 1
+        new_hero.attack_type = 1
     elif name == 'knight':
-        hero.attack_type = 1
+        new_hero.attack_type = 1
     elif name == 'warrior':
-        hero.attack_type = 1
+        new_hero.attack_type = 1
     elif name == 'guardian':
-        hero.attack_type = 1
+        new_hero.attack_type = 1
     elif name == 'pirate':
-        hero.attack_type = 1
+        new_hero.attack_type = 1
     elif name == 'ranger':
-        hero.attack_type = 1
+        new_hero.attack_type = 1
     elif name == 'archer':
-        hero.attack_type = 1
+        new_hero.attack_type = 1
     elif name == 'hunter':
-        hero.attack_type = 1
+        new_hero.attack_type = 1
     elif name == 'jav':
-        hero.attack_type = 1
+        new_hero.attack_type = 1
     elif name == 'mage':
-        hero.attack_type = 1
+        new_hero.attack_type = 1
     elif name == 'elemental':
-        hero.attack_type = 1
+        new_hero.attack_type = 1
     elif name == 'warlock':
-        hero.attack_type = 1
+        new_hero.attack_type = 1
     elif name == 'wizard':
-        hero.attack_type = 1
+        new_hero.attack_type = 1
     elif name == 'healer':
-        hero.attack_type = 1
+        new_hero.attack_type = 1
     elif name == 'paladin':
-        hero.attack_type = 1
+        new_hero.attack_type = 1
     elif name == 'druid':
-        hero.attack_type = 1
+        new_hero.attack_type = 1
     elif name == 'bard':
-        hero.attack_type = 1
+        new_hero.attack_type = 1
     elif name == 'princess':
-        hero.attack_type = 1
+        new_hero.attack_type = 1
 
-    return hero
+    return new_hero
 
 # =================================================================================================
 # LOOP METHODS
@@ -901,7 +1026,7 @@ def get_points_alt(zones: list[Zone], main_path_of_pivot: list[int], alt_path_of
         if previous_zone_id is not None:
             # If the previous zone is a deadend:
             if is_deadend_zone(previous_zone_id, zones):
-                pass # No allowable points in the pervious zone
+                pass # No allowable points in the previous zone
             else: # If the previous zone is not a deadend
                 # Hero starts on deadend zone can move to the previous nondeadend zone
                 allowable_zones.append(previous_zone_id)
@@ -1087,7 +1212,140 @@ def loop(board, positions, zones, heroes):
 
     pivot = 1
 
+# =================================================================================================
+# PRINT METHODS
+# =================================================================================================
+def print_map_plain(board):
+    # Print column numbers
+    print('    ', end='')
+    for col in range(len(board[0])):
+        print(f'{col:2}', end='')
+    print()
+    print(" ---------------------------------")
 
+    # Print board rows with row numbers
+    for i, row in enumerate(board):
+        print(f'{i:2} | ', end='')
+        print(' '.join(row))
+
+# =================================================================================================
+def print_map_with_zones(map: Map):
+    print("Zone Map: ", map.name, "\n")
+
+    # Track which zones have been printed in this row
+    printed_zones = []
+
+    # Print column numbers
+    print('    ', end='')
+    for col in range(len(map.board[0])):
+        if col == 10:
+            print(" ", end= "")
+        print(f'{col:2}', end=' ')
+    print()
+
+    print("------", end = "")
+    for i in range(len(map.board[0])):
+        print("---", end = "")
+    print("\n", end = "")
+
+    # Loop through the rows
+    for i in range(len(map.board)):
+        print(f'{i:2} | ', end='')
+
+        # Loop through the columns
+        for j in range(len(map.board[i])):
+            found = False
+            # Check each zone
+            for zone in map.zones:
+                # Find the zone that contains the current board position
+                if (i, j) in zone.points and zone.id not in printed_zones:
+                    # Print the zone id as a 2-digit number
+                    print(f'{zone.id:02}', end=' ')
+                    found = True
+                    printed_zones.append(zone.id)
+                    break
+
+            # If no zone contains the current position, check for obstacle
+            if not found:
+            # else:
+                if map.board[i][j] == obstacle_code:
+                    print('[]', end=' ')
+                else:
+                    print('..', end=' ')
+
+        print('|')
+
+    print("------", end = "")
+    for i in range(len(map.board[0])):
+        print("---", end = "")
+    print("\n")
+
+# =================================================================================================
+def print_map_details(name, board, zones, chokepoints, deadends):
+    print(name)
+    print("\n--------------------------------")
+    print_map_with_zones(board, zones)
+    print("\nchokepoints: ", chokepoints)
+    print("deadends (", len(deadends), "): ", deadends)
+    for z in zones:
+        print(z)
+
+# =================================================================================================
+def print_debug_log(main_list):
+    # Open the file for writing
+    debug_file = open("logs/debug_log.txt", "w")
+
+    # Iterate through each element in the 4D list and write to the file
+    for s in range(len(main_list)):
+        for p in range(len(main_list[s])):
+            path_id = main_list[s][p][0].main_path_id
+            if path_id < 26:
+                path_char = chr(65 + path_id - 3)  # A = 0, B = 1, ..., Z = 25
+            else:
+                first_char = chr(65 + (path_id - 26 - 3) // 26)  # A-Z
+                second_char = chr(65 + (path_id - 26 - 3) % 26)  # A-Z
+                path_char = f"{first_char}{second_char}"  # AA, AB, ...
+            
+            debug_file.write(f"\n******************************\nSection {s} - Path {path_char} : {path_id} = {paths[path_id]}\n******************************\n")
+            for z in range(len(main_list[s][p])):
+                zone_id = main_list[s][p][z].zone_id
+                debug_file.write(f"Zone {zone_id}: {main_list[s][p][z].points}\n")
+
+    # Close the file
+    debug_file.close()
+
+# =================================================================================================
+def print_debug_log_excel(paths, main_list):
+    # Open the debug file for writing
+    with open("logs/debug_log2.txt", "w") as debug_file:
+
+        debug_file.write(f"\t")
+
+        # Print paths as first row
+        for p in paths:
+            path_str = ", ".join(map(str, p))
+            debug_file.write(f"{path_str} \t ")
+        debug_file.write(f"\n")
+
+        # Loop through the sections
+        for s in range(len(main_list)):
+            # Get the number of zones in the current section
+            num_zones = len(main_list[s][0])
+            
+            # Loop through each zone in the section
+            for z in range(num_zones):
+                zone_output = f"{z}\t"
+                # Loop through each path in the section
+                for p in range(len(main_list[s])):
+                    path_points = main_list[s][p][z].points
+                    # Convert list of points to a string and remove brackets
+                    points_str = str(path_points).replace("[", "").replace("]", "")
+                    zone_output += f"{points_str} \t"
+                
+                # Remove the trailing tab and space
+                zone_output = zone_output.rstrip('\t ')
+                # Write the formatted output to the debug file
+                debug_file.write(f"{zone_output}\n")
 
 # =================================================================================================
 # SCRIPT
@@ -1096,176 +1354,77 @@ def loop(board, positions, zones, heroes):
 if validate_inputs is False:
     exit()
 
-board_terrain = parse_input(format_input(terrain))
-board_pos = parse_input(format_input(positions))
-board_obstacles = get_obstacle_board(board_terrain, board_pos, obstacles)
-board_obstacles_lava = get_obstacle_board(board_terrain, board_pos, obstacles_lava)
-board_obstacles_water = get_obstacle_board(board_terrain, board_pos, obstacles_water)
-board_obstacles_flying = get_obstacle_board(board_terrain, board_pos, obstacles_flying)
-board_obstacles_rubble = get_obstacle_board(board_terrain, board_pos, obstacles_rubble)
+# Init all boards
+maps = init_maps()
 
-boards = [board_obstacles, board_obstacles_lava, board_obstacles_water, board_obstacles_flying, board_obstacles_rubble]
-
-print("\nTerrain:")
-print_board(board_terrain)
-print("\nPositions:")
-print_board(board_pos)
-print("board_obstacles:\n", board_obstacles)
-
-
-# Obstacle board
-print("\n--------------------------------")
-print("\nObstacles:")
-print_board(board_obstacles)
-chokepoints = find_chokepoints(board_obstacles)
-deadends = find_deadends(board_obstacles, chokepoints)
-print("\nchokepoints: ", chokepoints)
-print("deadends (", len(deadends), "): ", deadends)
-zones = get_zones_of_board(board_obstacles, deadends)
-for z in zones:
-    print(z)
-
-print_map(board_obstacles, zones)
-
-# # Obstacle board for lava walkers
-# print("\n--------------------------------")
-# print("\nObstacles Lava:")
-# print_board(board_obstacles_lava)
-# chokepoints_lava = find_chokepoints(board_obstacles_lava)
-# deadends_lava = find_deadends(board_obstacles_lava, chokepoints_lava)
-# print("\nchokepoints_lava: ", chokepoints_lava)
-# print("deadends_lava: ", deadends_lava)
-# zones_lava = get_zones(board_obstacles_lava, deadends_lava)
-# for z in zones_lava:
-#     print(z)
-
-# # Obstacle board for water walkers
-# print("\n--------------------------------")
-# print("\nObstacles water:")
-# print_board(board_obstacles_water)
-# chokepoints_water = find_chokepoints(board_obstacles_water)
-# deadends_water = find_deadends(board_obstacles_water, chokepoints_water)
-# print("\nchokepoints_water: ", chokepoints_water)
-# print("deadends_water: ", deadends_water)
-# zones_water = get_zones(board_obstacles_water, deadends_water)
-# for z in zones_water:
-#     print(z)
-
-# # Obstacle board for flying heroes
-# print("\n--------------------------------")
-# print("\nObstacles flying:")
-# print_board(board_obstacles_flying)
-# chokepoints_flying = find_chokepoints(board_obstacles_flying)
-# deadends_flying = find_deadends(board_obstacles_flying, chokepoints_flying)
-# print("\nchokepoints_flying: ", chokepoints_flying)
-# print("deadends_flying: ", deadends_flying)
-# zones_flying = get_zones(board_obstacles_flying, deadends_flying)
-# for z in zones_flying:
-#     print(z)
-
-# # Obstacle board for rubble walkers
-# print("\n--------------------------------")
-# print("\nObstacles rubble:")
-# print_board(board_obstacles_rubble)
-# chokepoints_rubble = find_chokepoints(board_obstacles_rubble)
-# deadends_rubble = find_deadends(board_obstacles_rubble, chokepoints_rubble)
-# print("\nchokepoints_rubble: ", chokepoints_rubble)
-# print("deadends_rubble: ", deadends_rubble)
-# zones_rubble = get_zones(board_obstacles_rubble, deadends_rubble)
-# for z in zones_rubble:
-#     print(z)
-
+# for i in range(5):
+#     print_map_with_zones(maps[i])
 
 heroes = init_heroes()
 
 # for h in heroes:
 #     print(h)
 
-loop(board_obstacles, board_pos, zones, heroes)
 
-sections = get_sections_in_zones(zones)
+# obstacle_basic_chrs = [Board_Codes.lava_code, Board_Codes.obstacle_code, Board_Codes.rubble_code, Board_Codes.water_code, Board_Codes.monster_code]
+# obstacles_basic_codes = [char.value for char in obstacle_basic_chrs]
+# print("obstacles_basic_codes: \n", obstacles_basic_codes)
+# map_terrain = parse_input(format_input(terrain))
+# print("map terrain: ")
+# print_map_plain(map_terrain)
+# map_positions = parse_input(format_input(positions))
+# print("map pos: ")
+# print_map_plain(map_positions)
+# map_obstacles_basic = get_obstacle_board(map_terrain, map_positions, obstacles_basic_codes)
+# print("map_obstacle_basic:")
+# print_map_plain(map_obstacles_basic)
+
+# chokepoints_basic = find_chokepoints(map_obstacles_basic)
+# deadends_basic = find_deadends(map_obstacles_basic, chokepoints_basic)
+# print(deadends_basic)
+
+# zones_basic = get_zones_of_map(map_obstacles_basic, deadends_basic)
+# map_basic: Map_Ids = Map_Ids(basic_map_id, "Basic", map_obstacles_basic, chokepoints_basic, deadends_basic, zones_basic)
+    
+zones_basic = maps[basic_map_id].zones
+
+# zones_basic = get_zones_of_map(map_obstacles_basic, deadends_basic)
+
+# for z in zones_basic:
+#     print("zones:\n", z)
+
+sections = get_sections_in_zones(zones_basic)
 print(sections)
 
 print("================================================================")
-paths = get_all_paths(zones)
+paths = get_all_paths(zones_basic)
 # print("paths:", paths, "\n")
 
-zones_section1 = get_zones_in_section(1, zones)
+zones_section1 = get_zones_in_section(1, zones_basic)
 
 my_main_hero_start_zone = 2
 my_main_hero_end_zone = 25
 my_main_hero_zone = 9
 my_alt_hero_zone = 19
 
-my_main_path = get_path_from_start_to_end(paths, my_main_hero_start_zone,my_main_hero_end_zone)
-print("main path id: ", my_main_path)
-print("main hero starting zone id:", my_main_hero_zone)
+# my_main_path = get_path_from_start_to_end(paths, my_main_hero_start_zone,my_main_hero_end_zone)
+# print("main path id: ", my_main_path)
+# print("main hero starting zone id:", my_main_hero_zone)
 
-allowable_points_main = get_points_main(zones_section1, my_main_path, my_main_hero_zone)
-print("\nmain allowable_points:\n", allowable_points_main)
+# allowable_points_main = get_points_main(zones_section1, my_main_path, my_main_hero_zone)
+# print("\nmain allowable_points:\n", allowable_points_main)
 
-my_alt_path = get_path_from_start_to_end(paths, my_main_hero_start_zone, my_alt_hero_zone)
+# my_alt_path = get_path_from_start_to_end(paths, my_main_hero_start_zone, my_alt_hero_zone)
 
-print("\nalt path id: ", my_alt_path)
-print("alt hero starting zone id:", my_alt_hero_zone)
+# print("\nalt path id: ", my_alt_path)
+# print("alt hero starting zone id:", my_alt_hero_zone)
 
-allowable_points_alt = get_points_alt(zones_section1, my_main_path, my_alt_path, my_alt_hero_zone)
-print("\nAlt allowable_points:\n", allowable_points_alt)
+# allowable_points_alt = get_points_alt(zones_section1, my_main_path, my_alt_path, my_alt_hero_zone)
+# print("\nAlt allowable_points:\n", allowable_points_alt)
 
-main_list = get_all_allowable_points(sections, zones, paths)
+# main_list = get_all_allowable_points(sections, zones_basic, paths)
 
 # for p in main_list[1][575][20].points:
 #     print(p)
 
-# Open the file for writing
-debug_file = open("logs/debug_log.txt", "w")
 
-# Iterate through each element in the 4D list and write to the file
-for s in range(len(main_list)):
-    for p in range(len(main_list[s])):
-        path_id = main_list[s][p][0].main_path_id
-        if path_id < 26:
-            path_char = chr(65 + path_id - 3)  # A = 0, B = 1, ..., Z = 25
-        else:
-            first_char = chr(65 + (path_id - 26 - 3) // 26)  # A-Z
-            second_char = chr(65 + (path_id - 26 - 3) % 26)  # A-Z
-            path_char = f"{first_char}{second_char}"  # AA, AB, ...
-        
-        debug_file.write(f"\n******************************\nSection {s} - Path {path_char} : {path_id} = {paths[path_id]}\n******************************\n")
-        for z in range(len(main_list[s][p])):
-            zone_id = main_list[s][p][z].zone_id
-            debug_file.write(f"Zone {zone_id}: {main_list[s][p][z].points}\n")
-
-# Close the file
-debug_file.close()
-
-# Open the debug file for writing
-with open("logs/debug_log2.txt", "w") as debug_file:
-
-    debug_file.write(f"\t")
-
-    # Print paths as first row
-    for p in paths:
-        path_str = ", ".join(map(str, p))
-        debug_file.write(f"{path_str} \t ")
-    debug_file.write(f"\n")
-
-    # Loop through the sections
-    for s in range(len(main_list)):
-        # Get the number of zones in the current section
-        num_zones = len(main_list[s][0])
-        
-        # Loop through each zone in the section
-        for z in range(num_zones):
-            zone_output = f"{z}\t"
-            # Loop through each path in the section
-            for p in range(len(main_list[s])):
-                path_points = main_list[s][p][z].points
-                # Convert list of points to a string and remove brackets
-                points_str = str(path_points).replace("[", "").replace("]", "")
-                zone_output += f"{points_str} \t"
-            
-            # Remove the trailing tab and space
-            zone_output = zone_output.rstrip('\t ')
-            # Write the formatted output to the debug file
-            debug_file.write(f"{zone_output}\n")

@@ -1,23 +1,30 @@
 from enum import Enum
 
-class Board(Enum):
-    # board terrain legend
-    lava = 'L'
-    water = 'W'
-    rubble = 'R'
-    ice = 'I'
-    obstacle = 'O'
-    empty_square = '.'
-    monster = 'M'
+class Board_Codes(Enum):
+    lava_code = 'L'
+    water_code = 'W'
+    rubble_code = 'R'
+    ice_code = 'I'
+    obstacle_code = 'O'
+    empty_square_code = '.'
+    monster_code = 'M'
 
     def __eq__(self, other):
-            if isinstance(other, Board):
+            if isinstance(other, Board_Codes):
                 return self.value == other.value
             elif isinstance(other, str):
                 return self.value == other
             return False
 
-class Monsters(Enum):
+class Map(Enum):
+    basic_map = 0
+    lava_map = 1
+    water_map = 2
+    flying_map = 3
+    rubble_map = 4
+
+
+class Monsters_Codes(Enum):
     # Monsters
     monster1 = 'A'
     monster2 = 'B'
