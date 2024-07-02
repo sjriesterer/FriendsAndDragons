@@ -9,14 +9,14 @@ class Board_Codes(Enum):
     empty_square_code = '.'
     monster_code = 'M'
 
-    def __eq__(self, other):
-            if isinstance(other, Board_Codes):
-                return self.value == other.value
-            elif isinstance(other, str):
-                return self.value == other
-            return False
+    # def __eq__(self, other):
+    #         if isinstance(other, Board_Codes):
+    #             return self.value == other.value
+    #         elif isinstance(other, str):
+    #             return self.value == other
+    #         return False
 
-class Map(Enum):
+class Map_Codes(Enum):
     basic_map = 0
     lava_map = 1
     water_map = 2
@@ -55,7 +55,16 @@ class Hero_Class(Enum):
     princess = 'pri'
 
 class Attack_Types:
-    melee: int = 1
-    ranged: int = 2
-    pirate: int = 3
-    magic: int = 4
+    melee_4: int = 0
+    melee_8: int = 1
+    ranged_4: int = 2
+    ranged_8: int = 3
+    ranged_jav: int = 4
+    pirate: int = 5
+    magic_4: int = 6
+    magic_8: int = 7
+
+class Support_Types:
+    princess: int = 0
+    heal_4: int = 1
+    heal_8: int = 2

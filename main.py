@@ -6,7 +6,9 @@
 # IMPORTS
 # =================================================================================================
 import sys
+import os
 from modules.hero import Hero
+from modules.map import Map
 
 from enums import *
 from inputs import Inputs
@@ -28,7 +30,8 @@ hero_terrains = inputs.hero_terrains
 # GLOBALS
 # =================================================================================================
 
-maps = []
+maps: list[Map] = []
+heros: list[Hero] = []
 
 # =================================================================================================
 # Codes
@@ -36,11 +39,11 @@ maps = []
 
 
 # Map Ids
-basic_map_id = Map.basic_map.value
-lava_map_id = Map.lava_map.value
-water_map_id = Map.water_map.value
-flying_map_id = Map.flying_map.value
-rubble_map_id = Map.rubble_map.value
+basic_map_id = Map_Codes.basic_map.value
+lava_map_id = Map_Codes.lava_map.value
+water_map_id = Map_Codes.water_map.value
+flying_map_id = Map_Codes.flying_map.value
+rubble_map_id = Map_Codes.rubble_map.value
 
 # Terrain codes
 lava_code = Board_Codes.lava_code.value
@@ -49,22 +52,15 @@ rubble_code = Board_Codes.rubble_code.value
 ice_code = Board_Codes.lava_code.value
 obstacle_code = Board_Codes.obstacle_code.value
 empty_square_code = Board_Codes.empty_square_code.value
-monster_code = Board_Codes.monster_code.value
-
-# Lists of obstacle valid characters
-obstacle_basic_chrs = [Board_Codes.lava_code, Board_Codes.obstacle_code, Board_Codes.rubble_code, Board_Codes.water_code, Board_Codes.monster_code]
-obstacle_lava_chrs = [Board_Codes.obstacle_code, Board_Codes.rubble_code, Board_Codes.water_code, Board_Codes.monster_code]
-obstacle_water_chrs = [Board_Codes.lava_code, Board_Codes.obstacle_code, Board_Codes.rubble_code, Board_Codes.monster_code] 
-obstacle_flying_chrs = [Board_Codes.obstacle_code, Board_Codes.monster_code]
-obstacle_rubble_chrs = [Board_Codes.lava_code, Board_Codes.obstacle_code, Board_Codes.water_code, Board_Codes.monster_code]
-obstacles_basic_codes = [char.value for char in obstacle_basic_chrs]
-obstacles_lava_codes = [char.value for char in obstacle_lava_chrs]
-obstacles_water_codes = [char.value for char in obstacle_water_chrs]
-obstacles_flying_codes = [char.value for char in obstacle_flying_chrs]
-obstacles_rubble_codes = [char.value for char in obstacle_rubble_chrs]
 
 # Monster codes
 monster_codes = [Monsters_Codes.monster1.value, Monsters_Codes.monster2.value, Monsters_Codes.monster3.value, Monsters_Codes.monster4.value]
+
+# Attack Type codes
+# melee_code = Attack_Types.melee
+# range_code = Attack_Types.ranged
+# pirate_code = Attack_Types.pirate
+# magic_code = Attack_Types.magic
 
 # =================================================================================================
 # CLASSES
@@ -90,14 +86,14 @@ class Allowable_Points:
         self.zone_id = 0
         self.points = []
 
-class Map:
-    def __init__(self, id=0, name="", board=None, chokepoints=None, deadends=None, zones=None):
-        self.id = id
-        self.name = name
-        self.board = board if board is not None else []
-        self.chokepoints = chokepoints if chokepoints is not None else []
-        self.deadends = deadends if deadends is not None else []
-        self.zones = zones if zones is not None else []
+# class Map:
+#     def __init__(self, id=0, name="", board=None, chokepoints=None, deadends=None, zones=None):
+#         self.id = id
+#         self.name = name
+#         self.board = board if board is not None else []
+#         self.chokepoints = chokepoints if chokepoints is not None else []
+#         self.deadends = deadends if deadends is not None else []
+#         self.zones = zones if zones is not None else []
 
 # =================================================================================================
 # INIT METHODS
@@ -120,6 +116,13 @@ def format_input(input):
 def init_maps() -> list[Map]:
     maps: list[Map] = []
 
+    # Lists of obstacle valid characters
+    obstacles_basic_codes = [obstacle_code, lava_code, water_code, rubble_code]
+    obstacles_lava_codes = [obstacle_code, water_code, rubble_code]
+    obstacles_water_codes = [obstacle_code, lava_code, rubble_code]
+    obstacles_flying_codes = [obstacle_code]
+    obstacles_rubble_codes = [obstacle_code, lava_code, water_code]
+
     map_terrain = parse_input(format_input(terrain))
     map_positions = parse_input(format_input(positions))
     map_obstacles_basic = get_obstacle_board(map_terrain, map_positions, obstacles_basic_codes)
@@ -139,22 +142,13 @@ def init_maps() -> list[Map]:
     zones_basic = get_zones_of_map(map_obstacles_basic, deadends_basic)
     map_basic: Map = Map(basic_map_id, "Basic", map_obstacles_basic, chokepoints_basic, deadends_basic, zones_basic)
 
-    # print_map_details("Basic", map_obstacles_basic, zones_basic, chokepoints_basic, deadends_basic)
-
     # Obstacle map for lava walkers
     if count_obstacles(map_terrain, [lava_code]) == 0:
         map_lava: Map = Map(lava_map_id, "Lava", map_obstacles_basic, chokepoints_basic, deadends_basic, zones_basic)
     else:
         chokepoints_lava = find_chokepoints(map_obstacles_lava)
-        print("map lava and chokepoints")
-        print_map_plain(map_obstacles_lava)
-        print(chokepoints_lava)
-
         deadends_lava = find_deadends(map_obstacles_lava, chokepoints_lava)
-        print(deadends_lava)
         zones_lava = get_zones_of_map(map_obstacles_lava, deadends_lava)
-        for z in zones_lava:
-            print(z)
         map_lava: Map = Map(lava_map_id, "Lava", map_obstacles_lava, chokepoints_lava, deadends_lava, zones_lava)
 
     # Obstacle map for water walkers
@@ -216,13 +210,6 @@ def is_valid_point(board, point):
     return 0 <= point[0] < len(board) and 0 <= point[1] < len(board[0])
 
 # =================================================================================================
-# def is_valid_move(board, visited, row, col, designated_point):
-#     rows = len(board)
-#     cols = len(board[0])
-#     return (0 <= row < rows and 0 <= col < cols and
-#             board[row][col] != 'O' and not visited[row][col] and
-#             (row, col) != designated_point)
-
 def is_valid_move(board, visited, row, col, chokepoint) -> bool:
     rows = len(board)
     cols = len(board[0])
@@ -436,59 +423,6 @@ def is_cardinally_adjacent(point1, point2):
 
 # # =================================================================================================
 # # True if a path exists on the board from start to end and not passing through the chokepoint
-# def does_path_exist2(board: list[list[chr]], start: tuple, end: tuple, chokepoint: tuple) -> bool:
-#     rows = len(board)
-#     cols = len(board[0])
-#     visited = [[False for _ in range(cols)] for _ in range(rows)]
-    
-#     def backtrack(row, col):
-#         if (row, col) == end:
-#             return True
-#         visited[row][col] = True
-        
-#         directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
-#         for dr, dc in directions:
-#             new_row, new_col = row + dr, col + dc
-#             if is_valid_move(board, visited, new_row, new_col, chokepoint):
-#                 if backtrack(new_row, new_col):
-#                     return True
-                
-#         visited[row][col] = False
-#         return False
-    
-#     start_row, start_col = start
-#     return backtrack(start_row, start_col)
-
-# # =================================================================================================
-# def does_path_exist3(board: list[list[chr]], start: tuple[int, int], end: tuple[int, int], chokepoint: tuple[int, int]) -> bool:
-#     rows, cols = len(board), len(board[0])
-#     visited = [[False for _ in range(cols)] for _ in range(rows)]
-#     count = 0
-
-#     def backtrack(row, col, count) -> bool:
-#         count = count + 1
-#         # print(count)
-#         # Check if we've reached the end point
-#         if (row, col) == end:
-#             return True
-#         # Mark the current position as visited
-#         visited[row][col] = True
-        
-#         # Define possible movement directions (right, down, left, up)
-#         directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
-#         for dr, dc in directions:
-#             new_row, new_col = row + dr, col + dc
-#             if is_valid_move(board, visited, new_row, new_col, chokepoint):
-#                 if backtrack(new_row, new_col, count):
-#                     return True
-        
-#         # Unmark the current position (backtracking)
-#         visited[row][col] = False
-#         return False
-
-#     start_row, start_col = start
-#     return backtrack(start_row, start_col, count)
-
 def does_path_exist(board: list[list[chr]], start: tuple[int, int], end: tuple[int, int], chokepoint: tuple[int, int]) -> bool:
     rows, cols = len(board), len(board[0])
     visited = [[False for _ in range(cols)] for _ in range(rows)]
@@ -721,7 +655,7 @@ def init_heroes() -> list[Hero]:
         new_hero.board_map = maps[hero_terrains[id]]
 
 
-        
+
         heroes.append(new_hero)
         id = id + 1
     return heroes
