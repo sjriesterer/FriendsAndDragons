@@ -23,3 +23,12 @@ class Hero:
 
     def __str__(self):
         return f'ID: {self.id}, Name: {self.name}, Attack: {self.attack}, Start Pos: {self.starting_point}, Current Pos: {self.current_point}'
+    
+    # Returns the point of the hero id on the board
+    def get_hero_pos(self, board: list[list[str]]):
+        id_str = str(self.id)
+        for row_index, row in enumerate(board):
+            for col_index, cell in enumerate(row):
+                if cell == id_str:
+                    return (row_index, col_index)
+        return None  # Return None if the id is not found

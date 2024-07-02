@@ -21,8 +21,8 @@ sys.path.append('/modules')
 # =================================================================================================
 
 inputs = Inputs()
-terrain = inputs.terrain
-positions = inputs.positions
+board_terrain = inputs.terrain
+board_positions = inputs.positions
 hero_inputs = inputs.heroes
 hero_terrains = inputs.hero_terrains
 
@@ -86,15 +86,6 @@ class Allowable_Points:
         self.zone_id = 0
         self.points = []
 
-# class Map:
-#     def __init__(self, id=0, name="", board=None, chokepoints=None, deadends=None, zones=None):
-#         self.id = id
-#         self.name = name
-#         self.board = board if board is not None else []
-#         self.chokepoints = chokepoints if chokepoints is not None else []
-#         self.deadends = deadends if deadends is not None else []
-#         self.zones = zones if zones is not None else []
-
 # =================================================================================================
 # INIT METHODS
 # =================================================================================================
@@ -123,8 +114,8 @@ def init_maps() -> list[Map]:
     obstacles_flying_codes = [obstacle_code]
     obstacles_rubble_codes = [obstacle_code, lava_code, water_code]
 
-    map_terrain = parse_input(format_input(terrain))
-    map_positions = parse_input(format_input(positions))
+    map_terrain = parse_input(format_input(board_terrain))
+    map_positions = parse_input(format_input(board_positions))
     map_obstacles_basic = get_obstacle_board(map_terrain, map_positions, obstacles_basic_codes)
     map_obstacles_lava = get_obstacle_board(map_terrain, map_positions, obstacles_lava_codes)
     map_obstacles_water = get_obstacle_board(map_terrain, map_positions, obstacles_water_codes)
@@ -181,6 +172,22 @@ def init_maps() -> list[Map]:
     maps.extend([map_basic, map_lava, map_water, map_flying, map_rubble])
 
     return maps
+
+# =================================================================================================
+# 
+def init_heroes() -> list[Hero]:
+    heroes = []
+    id = 0
+    for hero in hero_inputs:
+        new_hero = get_hero(hero)
+        new_hero.id = id
+        new_hero.starting_point = new_hero.get_hero_pos(board_positions)
+        new_hero.board_map_id = hero_terrains[id]
+        new_hero.board_map = maps[hero_terrains[id]]
+
+        heroes.append(new_hero)
+        id = id + 1
+    return heroes
 
 # =================================================================================================
 # 
@@ -630,37 +637,6 @@ def find_deadends(board: list[list[chr]], chokepoints: tuple) -> list[tuple]:
     return obstacles
 
 # =================================================================================================
-# HERO METHODS
-# =================================================================================================
-# Returns the point of the hero id on the board
-def get_hero_pos(board, hero_id):
-    id_str = str(hero_id)
-    for row_index, row in enumerate(board):
-        for col_index, cell in enumerate(row):
-            if cell == id_str:
-                return (row_index, col_index)
-    return None  # Return None if the id is not found
-
-# =================================================================================================
-# 
-def init_heroes() -> list[Hero]:
-    heroes = []
-    id = 0
-    for hero in hero_inputs:
-        new_hero = get_hero(hero)
-        new_hero.id = id
-        new_hero.starting_point = get_hero_pos(positions, id)
-        new_hero.current_point = new_hero.starting_point
-        new_hero.board_map_id = hero_terrains[id]
-        new_hero.board_map = maps[hero_terrains[id]]
-
-
-
-        heroes.append(new_hero)
-        id = id + 1
-    return heroes
-
-# =================================================================================================
 def get_hero(hero_name) -> Hero:
     name = hero_name.lower()
     # melee4_heroes = ['assassin', 'knight']
@@ -722,10 +698,9 @@ def get_hero(hero_name) -> Hero:
 # LOOP METHODS
 # =================================================================================================
 
-
 # =================================================================================================
 # Gets all the sections of a give list of zones
-def get_sections_in_zones(zones):
+def get_sections_in_zones(zones: list[Zone]) -> list[int]:
     sections = []
     for z in zones:
         if z.section not in sections:
@@ -1163,58 +1138,6 @@ def print_map_plain(board):
         print(' '.join(row))
 
 # =================================================================================================
-def print_map_with_zones(map: Map):
-    print("Zone Map: ", map.name, "\n")
-
-    # Track which zones have been printed in this row
-    printed_zones = []
-
-    # Print column numbers
-    print('    ', end='')
-    for col in range(len(map.board[0])):
-        if col == 10:
-            print(" ", end= "")
-        print(f'{col:2}', end=' ')
-    print()
-
-    print("------", end = "")
-    for i in range(len(map.board[0])):
-        print("---", end = "")
-    print("\n", end = "")
-
-    # Loop through the rows
-    for i in range(len(map.board)):
-        print(f'{i:2} | ', end='')
-
-        # Loop through the columns
-        for j in range(len(map.board[i])):
-            found = False
-            # Check each zone
-            for zone in map.zones:
-                # Find the zone that contains the current board position
-                if (i, j) in zone.points and zone.id not in printed_zones:
-                    # Print the zone id as a 2-digit number
-                    print(f'{zone.id:02}', end=' ')
-                    found = True
-                    printed_zones.append(zone.id)
-                    break
-
-            # If no zone contains the current position, check for obstacle
-            if not found:
-            # else:
-                if map.board[i][j] == obstacle_code:
-                    print('[]', end=' ')
-                else:
-                    print('..', end=' ')
-
-        print('|')
-
-    print("------", end = "")
-    for i in range(len(map.board[0])):
-        print("---", end = "")
-    print("\n")
-
-# =================================================================================================
 def print_map_details(name, board, zones, chokepoints, deadends):
     print(name)
     print("\n--------------------------------")
@@ -1225,7 +1148,7 @@ def print_map_details(name, board, zones, chokepoints, deadends):
         print(z)
 
 # =================================================================================================
-def print_debug_log(main_list):
+def output_to_debug_log(main_list):
     # Open the file for writing
     debug_file = open("logs/debug_log.txt", "w")
 
@@ -1240,7 +1163,7 @@ def print_debug_log(main_list):
                 second_char = chr(65 + (path_id - 26 - 3) % 26)  # A-Z
                 path_char = f"{first_char}{second_char}"  # AA, AB, ...
             
-            debug_file.write(f"\n******************************\nSection {s} - Path {path_char} : {path_id} = {paths[path_id]}\n******************************\n")
+            debug_file.write(f"\n******************************\nSection {s} - Path {path_char} : {path_id} = {all_paths[path_id]}\n******************************\n")
             for z in range(len(main_list[s][p])):
                 zone_id = main_list[s][p][z].zone_id
                 debug_file.write(f"Zone {zone_id}: {main_list[s][p][z].points}\n")
@@ -1249,7 +1172,7 @@ def print_debug_log(main_list):
     debug_file.close()
 
 # =================================================================================================
-def print_debug_log_excel(paths, main_list):
+def output_debug_log_excel(paths, main_list):
     # Open the debug file for writing
     with open("logs/debug_log2.txt", "w") as debug_file:
 
@@ -1285,80 +1208,46 @@ def print_debug_log_excel(paths, main_list):
 # SCRIPT
 # =================================================================================================
 
+# Setup:
 if validate_inputs is False:
     exit()
 
-# Init all boards
 maps = init_maps()
-
-# for i in range(5):
-#     print_map_with_zones(maps[i])
-
+maps[0].print_map_with_zones()
 heroes = init_heroes()
-
-# for h in heroes:
-#     print(h)
-
-
-# obstacle_basic_chrs = [Board_Codes.lava_code, Board_Codes.obstacle_code, Board_Codes.rubble_code, Board_Codes.water_code, Board_Codes.monster_code]
-# obstacles_basic_codes = [char.value for char in obstacle_basic_chrs]
-# print("obstacles_basic_codes: \n", obstacles_basic_codes)
-# map_terrain = parse_input(format_input(terrain))
-# print("map terrain: ")
-# print_map_plain(map_terrain)
-# map_positions = parse_input(format_input(positions))
-# print("map pos: ")
-# print_map_plain(map_positions)
-# map_obstacles_basic = get_obstacle_board(map_terrain, map_positions, obstacles_basic_codes)
-# print("map_obstacle_basic:")
-# print_map_plain(map_obstacles_basic)
-
-# chokepoints_basic = find_chokepoints(map_obstacles_basic)
-# deadends_basic = find_deadends(map_obstacles_basic, chokepoints_basic)
-# print(deadends_basic)
-
-# zones_basic = get_zones_of_map(map_obstacles_basic, deadends_basic)
-# map_basic: Map_Ids = Map_Ids(basic_map_id, "Basic", map_obstacles_basic, chokepoints_basic, deadends_basic, zones_basic)
-    
 zones_basic = maps[basic_map_id].zones
-
-# zones_basic = get_zones_of_map(map_obstacles_basic, deadends_basic)
-
-# for z in zones_basic:
-#     print("zones:\n", z)
-
 sections = get_sections_in_zones(zones_basic)
-print(sections)
-
-print("================================================================")
-paths = get_all_paths(zones_basic)
-# print("paths:", paths, "\n")
-
+all_paths = get_all_paths(zones_basic)
 zones_section1 = get_zones_in_section(1, zones_basic)
 
+# =================================================================================================
+# Simulation
 my_main_hero_start_zone = 2
 my_main_hero_end_zone = 25
 my_main_hero_zone = 9
 my_alt_hero_zone = 19
 
-# my_main_path = get_path_from_start_to_end(paths, my_main_hero_start_zone,my_main_hero_end_zone)
-# print("main path id: ", my_main_path)
-# print("main hero starting zone id:", my_main_hero_zone)
+my_main_path = get_path_from_start_to_end(all_paths, my_main_hero_start_zone,my_main_hero_end_zone)
+print("main path id: ", my_main_path)
+print("main hero starting zone id:", my_main_hero_zone)
 
-# allowable_points_main = get_points_main(zones_section1, my_main_path, my_main_hero_zone)
-# print("\nmain allowable_points:\n", allowable_points_main)
+allowable_points_main = get_points_main(zones_section1, my_main_path, my_main_hero_zone)
+print("\nmain allowable_points:\n", allowable_points_main)
 
-# my_alt_path = get_path_from_start_to_end(paths, my_main_hero_start_zone, my_alt_hero_zone)
+my_alt_path = get_path_from_start_to_end(all_paths, my_main_hero_start_zone, my_alt_hero_zone)
 
-# print("\nalt path id: ", my_alt_path)
-# print("alt hero starting zone id:", my_alt_hero_zone)
+print("\nalt path id: ", my_alt_path)
+print("alt hero starting zone id:", my_alt_hero_zone)
 
-# allowable_points_alt = get_points_alt(zones_section1, my_main_path, my_alt_path, my_alt_hero_zone)
-# print("\nAlt allowable_points:\n", allowable_points_alt)
+allowable_points_alt = get_points_alt(zones_section1, my_main_path, my_alt_path, my_alt_hero_zone)
+print("\nAlt allowable_points:\n", allowable_points_alt)
 
-# main_list = get_all_allowable_points(sections, zones_basic, paths)
+main_list = get_all_allowable_points(sections, zones_basic, all_paths)
 
-# for p in main_list[1][575][20].points:
-#     print(p)
+# how to iterate through list
+for p in main_list[1][575][20].points:
+    print(p)
 
+output_to_debug_log(main_list)
+output_debug_log_excel(all_paths, main_list)
 
