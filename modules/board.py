@@ -2,25 +2,29 @@ from enums import Board_Codes
 from modules.point import Allowable_Point
 from modules.zone import Zone
 
-class Board:
+class Map:
     empty_square_code = Board_Codes.empty_square_code.value
     obstacle_code = Board_Codes.obstacle_code.value
     
-    def __init__(self, id=0, name="", board=None, chokepoints=None, deadends=None, sections=None, zones=None, paths=None, points=None):
+    def __init__(self, id=0, name="", board=None):
         self.id = 0
         self.name = name
         self.board = board if board is not None else []
-        self.chokepoints = chokepoints if chokepoints is not None else []
-        self.deadends = deadends if deadends is not None else []
-        self.sections = sections if sections is not None else []
-        self.zones = zones if zones is not None else []
-        self.paths = paths if paths is not None else []
-        self.points = points if points is not None else []
+        self.chokepoints = self.find_chokepoints()
+        self.deadends = self.find_deadends()
+        self.zones = self.get_zones_of_map()
+        self.sections = self.get_sections_in_zones()
+        self.paths = self.get_all_paths()
+        self.points = self.get_all_allowable_points()
 
     def __str__(self):
         return (f'ID: {self.id}, Name: {self.name}, '
                 f'Board: {self.board}, Chokepoints: {self.chokepoints}, '
                 f'Deadends: {self.deadends}, Zones: {self.zones}')
+
+    def get_copy(self, id, name):
+        board: Map = Map(id, name, self.board)
+        return board
 
 # =================================================================================================
 # PRINT
