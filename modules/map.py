@@ -1,10 +1,12 @@
-from enums import Board_Codes
+from enums import Board_Codes, Map_Codes
 from modules.point import Allowable_Point
 from modules.zone import Zone
 
 class Map:
     empty_square_code = Board_Codes.empty_square_code.value
     obstacle_code = Board_Codes.obstacle_code.value
+    basic_map_id = Map_Codes.basic_map.value
+    flying_map_id = Map_Codes.flying_map.value
     
     def __init__(self, id=0, name="", board=None):
         self.id = 0
@@ -15,7 +17,19 @@ class Map:
         self.zones = self.get_zones_of_map()
         self.sections = self.get_sections_in_zones()
         self.paths = self.get_all_paths()
-        self.points = self.get_all_allowable_points()
+        self.points_same = self.get_all_allowable_points_same()
+        # Don't need these unless this map is non-basic:
+        self.points_special_basic = []
+        self.points_flying_lava = []
+        self.points_flying_water = []
+        self.points_flying_rubble = []
+        if id > self.basic_map_id:
+            self.points_special_basic = self.get_allowable_points_mismatch()
+        # Only need these if the map is a flying map:
+        if id == self.flying_map_id:
+            self.points_flying_lava = self.get_allowable_points_mismatch()
+            self.points_flying_water = self.get_allowable_points_mismatch()
+            self.points_flying_rubble = self.get_allowable_points_mismatch()
 
     def __str__(self):
         return (f'ID: {self.id}, Name: {self.name}, '
@@ -110,7 +124,7 @@ class Map:
 # CHOKEPOINTS
 # =================================================================================================
 # region CHOKEPOINTS
-    #
+#
     def find_chokepoints(self) -> list[tuple]:
         chokepoints = []
         for row in range(len(self.board)):
@@ -238,7 +252,7 @@ class Map:
         return obstacles
 
 # =================================================================================================
-    # Checks if the chokepoint is a deadend 
+# Checks if the chokepoint is a deadend 
     def is_deadend(self, chokepoint: tuple):
         row, col = chokepoint
         left = (row, col-1)
@@ -320,7 +334,7 @@ class Map:
         return not self.does_path_exist(start, end, chokepoint)
 
 # # =================================================================================================
-    # True if a path exists on the board from start to end and not passing through the chokepoint
+# True if a path exists on the board from start to end and not passing through the chokepoint
     def does_path_exist(self, start: tuple[int, int], end: tuple[int, int], chokepoint: tuple[int, int]) -> bool:
         rows, cols = len(self.board), len(self.board[0])
         visited = [[False for _ in range(cols)] for _ in range(rows)]
@@ -333,7 +347,7 @@ class Map:
             if visited[row][col] or (row, col) == chokepoint:
                 return False
             # Check if the position is not an obstacle
-            return board[row][col] != 'O'
+            return board[row][col] != self.obstacle_code
         
         def backtrack(row, col) -> bool:
             # Check if we've reached the end point
@@ -364,7 +378,7 @@ class Map:
         return False
     
 # =================================================================================================
-    # Get all connected deadend zones to the zone_id given
+# Get all connected deadend zones to the zone_id given
     def get_connected_deadend_zone_ids(self, zone_id, zones: list[Zone]) -> list[int]:
         connected_deadend_zones = []
         for z in zones:
@@ -375,7 +389,7 @@ class Map:
         return connected_deadend_zones
 
 # =================================================================================================
-    # Returns the previous deadend zone prior to the zone_id on the path of zones given
+# Returns the previous deadend zone prior to the zone_id on the path of zones given
     def get_previous_deadend_zone_id(self, zone_id, path: list[Zone], zones: list[Zone]) -> int | None:
         if zone_id in path:
             index_of_zone = path.index(zone_id)
@@ -387,7 +401,7 @@ class Map:
         return None
 
 # =================================================================================================
-    # Returns the next deadend zone after the zone_id on the path of zones given
+# Returns the next deadend zone after the zone_id on the path of zones given
     def get_next_deadend_zone_id(self, zone_id, path: list[int], zones: list[Zone]):
         if zone_id in path:
             index_of_zone = path.index(zone_id)
@@ -405,7 +419,7 @@ class Map:
 # ZONES
 # =================================================================================================
 # region ZONES
-    # Returns a list of zones based on the board and deadends
+# Returns a list of zones based on the board and deadends
     def get_zones_of_map(self) -> list[Zone]:
         rows, cols = len(self.board), len(self.board[0])
         directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
@@ -503,12 +517,12 @@ class Map:
         return zones
 
 # =================================================================================================
-    # True if point1 is cardinally adjacent to point2
+# True if point1 is cardinally adjacent to point2
     def is_cardinally_adjacent(self, point1, point2):
         return (abs(point1[0] - point2[0]) == 1 and point1[1] == point2[1]) or (abs(point1[1] - point2[1]) == 1 and point1[0] == point2[0])
 
 # =================================================================================================
-    # Gets a minimized list of Zone objects of only the section given
+# Gets a minimized list of Zone objects of only the section given
     def get_zones_in_section(self, section: int) -> list[Zone]:
         result = []
         for zone in self.zones:
@@ -517,7 +531,7 @@ class Map:
         return result
 
 # =================================================================================================
-    # Gets the zone id of the point given
+# Gets the zone id of the point given
     def get_zone_of_pivot(self, point: tuple) -> Zone | None:
         for zone in self.zones:
             if point in zone.points:
@@ -525,7 +539,7 @@ class Map:
         return None  # Return None if no zone contains the point
 
 # =================================================================================================
-    # Gets a minimized list of Zone objects of only the section given
+# Gets a minimized list of Zone objects of only the section given
     def get_zones_in_section(self, section: int) -> list[Zone]:
         result = []
         for zone in self.zones:
@@ -534,7 +548,7 @@ class Map:
         return result
     
 # =================================================================================================
-    # Gets the previous zone before the zone_id on the path given
+# Gets the previous zone before the zone_id on the path given
     def get_previous_zone_id(self, zone_id: int, path: list[int]):
         for p in range(len(path) - 1):
             if zone_id == path[p+1]:
@@ -551,7 +565,7 @@ class Map:
 # PATHS
 # =================================================================================================
 # region PATHS
-    #
+#
     def get_all_paths(self) -> list[list[int]]:
         def dfs(current_zone, visited):
             visited.append(current_zone.id)
@@ -580,7 +594,7 @@ class Map:
         return all_paths
 
 # =================================================================================================
-    # Gets a list of paths between the zones of a section. Every combination is included.
+# Gets a list of paths between the zones of a section. Every combination is included.
     def get_paths_in_section(self, section: int) -> list[list[int]]:
         # Helper function to perform DFS and find all paths
         def dfs(current_zone, visited):
@@ -601,7 +615,7 @@ class Map:
         return paths
 
 # =================================================================================================
-    # Gets the path where start_zone is the first and end_zone is the last
+# Gets the path where start_zone is the first and end_zone is the last
     def get_path_from_start_to_end(self, start_zone: int, end_zone: int) -> list[int] | None:
         for p in self.paths:
             if p[0] == start_zone and p[-1] == end_zone:
@@ -609,7 +623,7 @@ class Map:
         return None
 
 # =================================================================================================
-    # 
+# 
     def get_path_id(self, start_zone: int, end_zone: int) -> int | None:
         for i in range(len(self.paths)):
             if self.paths[i][0] == start_zone and self.paths[i][len(self.paths[i])-1] == end_zone:
@@ -624,8 +638,8 @@ class Map:
 # =================================================================================================
 # SECTIONS
 # =================================================================================================
-    #
-    # Gets all the sections of the board
+# region SECTIONS
+# Gets all the sections of the board
     def get_sections_in_zones(self) -> list[int]:
         sections = []
         for z in self.zones:
@@ -634,10 +648,26 @@ class Map:
         return sections
 
 # =================================================================================================
+#
+    def get_section_of_point(self, point: tuple) -> int | None:
+        for z in self.zones:
+            if point in z.points:
+                return z.section
+        return None
+# endregion
+    
+# =================================================================================================
 # POINTS
 # =================================================================================================
-    # 
-    def get_all_allowable_points(self) -> list[list[list[list[tuple]]]]:
+# region POINTS
+# Gets all allowable points of this map if both the pivot and the movable hero share this map.
+# For example, if this map is a Lava map and both the pivot and the hero are lava walkers,
+# then this will get all allowable points the hero can move to based on what section and path
+# the pivot is on and what zone the hero is in.
+# The list is a nested list that represents: section > path > zone > points
+# For example, if the pivot is in section 1, on path id 49, and the hero is in zone 3, then you
+# can get the hero's allowable points by list[1][49][3].points
+    def get_all_allowable_points_same(self) -> list[list[list[list[tuple]]]]:
         allowable_points = []
 
         for s in range(len(self.sections)):
@@ -687,10 +717,55 @@ class Map:
         return allowable_points
 
 # =================================================================================================
-    # Gets a list of all allowable points for a moveable hero who is on the main path of the pivot
-    # zones = a list of Zone objects for the given board (should only be 1 section)
-    # main_path = a list of zones the pivot moves through
-    # start_zone = the starting zone of the movable hero
+#
+    def get_allowable_points_mismatch(self) -> list[list[list[list[tuple]]]]:
+        allowable_points = []
+
+        for s in range(len(self.sections)):
+            section_points = []
+            zones_in_this_section = self.get_zones_in_section(self.sections[s])
+            paths_in_this_section = self.get_paths_in_section(self.sections[s])
+            for p in range(len(paths_in_this_section)):
+                path_points = []
+                main_path = paths_in_this_section[p]
+                pivot_start_zone = main_path[0]
+                pivot_end_zone = main_path[len(main_path)-1]
+                main_path_id = self.get_path_id(pivot_start_zone, pivot_end_zone)
+
+                for z in range(len(zones_in_this_section)):
+                    zone_points: Allowable_Point = Allowable_Point()
+                    zone = zones_in_this_section[z]
+                    current_zone_id = zone.id
+
+                    if current_zone_id in main_path:
+                        points = self.get_points_main(zones_in_this_section, main_path, current_zone_id)
+                        zone_points.alt_path = None
+                    else:
+                        alt_path_id = self.get_path_id(pivot_start_zone, current_zone_id)
+                        alt_path = self.get_path_from_start_to_end(pivot_start_zone, current_zone_id)
+                        points = self.get_points_alt(zones_in_this_section, main_path, alt_path, current_zone_id)
+                        zone_points.alt_path = alt_path_id
+                        zone_points.alt_path = alt_path
+
+                    zone_points.zone_id = current_zone_id
+                    zone_points.section = s
+                    zone_points.main_path_id = main_path_id
+                    zone_points.main_path = self.paths[p]
+                    zone_points.points.extend(points)
+                    
+                    path_points.append(zone_points)  # Append zone_points to path_points
+                
+                section_points.append(path_points)  # Append path_points to section_points
+            
+            allowable_points.append(section_points)  # Append section_points to allowable_points
+        
+        return allowable_points
+
+# =================================================================================================
+# Gets a list of all allowable points for a moveable hero who is on the main path of the pivot
+# zones = a list of Zone objects for the given board (should only be 1 section)
+# main_path = a list of zones the pivot moves through
+# start_zone = the starting zone of the movable hero
     def get_points_main(self, zones: list[Zone], main_path_of_pivot: list[int], hero_start_zone_id: int):
         allowable_points = []
         allowable_zones = []
@@ -742,12 +817,12 @@ class Map:
         return allowable_points
 
 # =================================================================================================
-    # Gets a list of all allowable points for a moveable hero on an alternate path of the pivot
-    # zones = a list of Zone objects for the given board (should only be 1 section)
-    # main_path = the id of the current main path of the pivot (from pivot start zone to current pivot point)
-    # alt_path = the id of the alternate path of the pivot (from pivot start zone to hero start zone)
-    # start_zone = the starting zone of the movable hero
-    #TODO needs rigourous testing
+# Gets a list of all allowable points for a moveable hero on an alternate path of the pivot
+# zones = a list of Zone objects for the given board (should only be 1 section)
+# main_path = the id of the current main path of the pivot (from pivot start zone to current pivot point)
+# alt_path = the id of the alternate path of the pivot (from pivot start zone to hero start zone)
+# start_zone = the starting zone of the movable hero
+#TODO needs rigourous testing
     def get_points_alt(self, zones: list[Zone], main_path_of_pivot: list[int], alt_path_of_pivot: list[int], hero_start_zone_id: int):
         allowable_points = []  # Allow duplicates
         allowable_zones = []
@@ -811,3 +886,13 @@ class Map:
                 return z.points
         return None
 
+# =================================================================================================
+    def get_points_in_section(self, section: int) -> list[tuple]:
+        points: list[tuple] = []
+        for z in self.zones:
+            if z.section == section:
+                points.extend(z.points)
+        self.remove_duplicates(points)
+        points = sorted(points, key=lambda p: (p[0], p[1]))
+        return points
+#endregion

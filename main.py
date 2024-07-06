@@ -10,7 +10,7 @@ import os
 from modules.hero import Hero
 from modules.zone import Zone
 from modules.point import Allowable_Point
-from modules.board import Map
+from modules.map import Map
 
 from enums import *
 from inputs import Inputs
@@ -26,25 +26,18 @@ inputs = Inputs()
 board_terrain_input = inputs.terrain
 board_positions_input = inputs.positions
 hero_inputs = inputs.heroes
-hero_terrain_inputs = inputs.hero_terrains
 
 # =================================================================================================
 # GLOBALS
 # =================================================================================================
 
 maps: list[Map] = []
+map_matchups = []
 heros: list[Hero] = []
 
 # =================================================================================================
 # Codes
 # =================================================================================================
-
-# Map Ids
-basic_map_id = Map_Codes.basic_map.value
-lava_map_id = Map_Codes.lava_map.value
-water_map_id = Map_Codes.water_map.value
-flying_map_id = Map_Codes.flying_map.value
-rubble_map_id = Map_Codes.rubble_map.value
 
 # Terrain codes
 lava_code = Board_Codes.lava_code.value
@@ -56,6 +49,27 @@ empty_square_code = Board_Codes.empty_square_code.value
 
 # Monster codes
 monster_codes = [Monsters_Codes.monster1.value, Monsters_Codes.monster2.value, Monsters_Codes.monster3.value, Monsters_Codes.monster4.value]
+
+# Map Ids
+basic_map_id = Map_Codes.basic_map.value
+lava_map_id = Map_Codes.lava_map.value
+water_map_id = Map_Codes.water_map.value
+rubble_map_id = Map_Codes.rubble_map.value
+flying_map_id = Map_Codes.flying_map.value
+
+# Map Matchup Ids
+basic_match_id = Map_Matchups.basic.value
+lava_match_id = Map_Matchups.lava.value
+water_match_id = Map_Matchups.water.value
+rubble_match_id = Map_Matchups.rubble.value
+flying_match_id = Map_Matchups.flying.value
+lava_basic_match_id = Map_Matchups.lava_basic.value
+water_basic_match_id = Map_Matchups.water_basic.value
+rubble_basic_match_id = Map_Matchups.rubble_basic.value
+flying_basic_match_id = Map_Matchups.flying_basic.value
+flying_lava_match_id = Map_Matchups.flying_lava.value
+flying_water_match_id = Map_Matchups.flying_water.value
+flying_rubble_match_id = Map_Matchups.flying_rubble.value
 
 # Attack Type codes
 # melee_code = Attack_Types.melee
@@ -86,8 +100,8 @@ def init_maps() -> list[Map]:
     obstacles_basic_codes = [obstacle_code, lava_code, water_code, rubble_code]
     obstacles_lava_codes = [obstacle_code, water_code, rubble_code]
     obstacles_water_codes = [obstacle_code, lava_code, rubble_code]
-    obstacles_flying_codes = [obstacle_code]
     obstacles_rubble_codes = [obstacle_code, lava_code, water_code]
+    obstacles_flying_codes = [obstacle_code]
 
     # Input boards:
     board_terrain = parse_input(format_input(board_terrain_input))
@@ -97,8 +111,8 @@ def init_maps() -> list[Map]:
     board_obstacles_basic = get_obstacle_board(board_terrain, board_positions, obstacles_basic_codes)
     board_obstacles_lava = get_obstacle_board(board_terrain, board_positions, obstacles_lava_codes)
     board_obstacles_water = get_obstacle_board(board_terrain, board_positions, obstacles_water_codes)
-    board_obstacles_flying = get_obstacle_board(board_terrain, board_positions, obstacles_flying_codes)
     board_obstacles_rubble = get_obstacle_board(board_terrain, board_positions, obstacles_rubble_codes)
+    board_obstacles_flying = get_obstacle_board(board_terrain, board_positions, obstacles_flying_codes)
 
     print("\nTerrain:")
     print_map_plain(board_terrain)
@@ -107,11 +121,21 @@ def init_maps() -> list[Map]:
 
     # Map objects:
     map_basic: Map = Map(basic_map_id, "Basic", board_obstacles_basic)
-
     map_lava: Map = Map(lava_map_id, "Lava", board_obstacles_lava)
     map_water: Map = Map(water_map_id, "Water", board_obstacles_water)
-    map_flying: Map = Map(flying_map_id, "Flying", board_obstacles_flying)
     map_rubble: Map = Map(rubble_map_id, "Rubble", board_obstacles_rubble)
+    map_flying: Map = Map(flying_map_id, "Flying", board_obstacles_flying)
+
+    # Is this more efficient?:
+
+    # def count_obstacles(board: list[list[chr]], chars: list[chr]) -> int:
+    #     lower_chars = [c.lower() for c in chars]
+    #     count = 0
+    #     for row in board:
+    #         for char in row:
+    #             if char.lower() in lower_chars:
+    #                 count += 1
+    #     return count
 
     # if count_obstacles(map_terrain, [lava_code]) == 0:
     #     map_lava: Map = map_basic.get_copy(lava_code, "Lava")
@@ -121,105 +145,88 @@ def init_maps() -> list[Map]:
     #     map_water: Map = map_basic.get_copy(water_code, "Water")
     # else:
     #     map_water: Map = Map(water_map_id, "Water", map_obstacles_water)
-    # if count_obstacles(map_terrain, [lava_code, water_code, rubble_code]) == 0:
-    #     map_flying: Map = map_basic.get_copy(flying_map_id, "Flying")
-    # else:
-    #     map_flying: Map = Map(flying_map_id, "Flying", map_obstacles_flying)
     # if count_obstacles(map_terrain, [rubble_code]) == 0:
     #     map_rubble: Map = map_basic.get_copy(rubble_map_id, "Rubble")
     # else:
     #     map_rubble: Map = Map(rubble_map_id, "Rubble", map_obstacles_rubble)
+    # if count_obstacles(map_terrain, [lava_code, water_code, rubble_code]) == 0:
+    #     map_flying: Map = map_basic.get_copy(flying_map_id, "Flying")
+    # else:
+    #     map_flying: Map = Map(flying_map_id, "Flying", map_obstacles_flying)
 
-    return [map_basic, map_lava, map_water, map_flying, map_rubble]
-
-# =================================================================================================
-# 
-def count_obstacles(board: list[list[chr]], chars: list[chr]) -> int:
-    # Convert the list of characters to lowercase once
-    lower_chars = [c.lower() for c in chars]
-    count = 0
-    for row in board:
-        for char in row:
-            if char.lower() in lower_chars:
-                count += 1
-    return count
+    return [map_basic, map_lava, map_water, map_rubble, map_flying]
 
 # =================================================================================================
 # 
 def init_heroes() -> list[Hero]:
-    heroes = []
+    heroes: list[Hero] = []
     id = 0
     for hero in hero_inputs:
         new_hero = get_hero(hero)
         new_hero.id = id
         new_hero.starting_point = new_hero.get_hero_pos(board_positions_input)
-        new_hero.board_map_id = hero_terrain_inputs[id]
-        new_hero.board_map = maps[hero_terrain_inputs[id]]
-
+        new_hero.section = maps[new_hero.board_map_id].get_section_of_point(new_hero.starting_point)
+        new_hero.pivot_points = maps[new_hero.board_map_id].get_points_in_section(new_hero.section)
         heroes.append(new_hero)
         id = id + 1
     return heroes
 
 # =================================================================================================
-def get_hero(hero_name) -> Hero:
-    name = hero_name.lower()
-    # melee4_heroes = ['assassin', 'knight']
-    # melee8_heroes = ['monk', 'rouge', 'barbarian']
-    # range4_heroes = []
-    # range8_heroes = ['ranger']
-    # magic4_heroes = ['mage']
-    # magic8_heroes = ['elementalist']
+#
+def get_hero(hero: Hero) -> Hero:
+    cls = hero.cls.lower()
 
-    new_hero = Hero()
-    new_hero.name = hero_name
+    new_hero = hero.copy()
 
-    if name == 'monk':
+    if cls == 'monk':
         new_hero.attack_type = 1
-    elif name == 'barbarian':
+    elif cls == 'barbarian':
         new_hero.attack_type = 1
-    elif name == 'assassin':
+    elif cls == 'assassin':
         new_hero.attack_type = 1
-    elif name == 'rouge':
+    elif cls == 'rouge':
         new_hero.attack_type = 1
-    elif name == 'knight':
+    elif cls == 'knight':
         new_hero.attack_type = 1
-    elif name == 'warrior':
+    elif cls == 'warrior':
         new_hero.attack_type = 1
-    elif name == 'guardian':
+    elif cls == 'guardian':
         new_hero.attack_type = 1
-    elif name == 'pirate':
+    elif cls == 'pirate':
         new_hero.attack_type = 1
-    elif name == 'ranger':
+    elif cls == 'ranger':
         new_hero.attack_type = 1
-    elif name == 'archer':
+    elif cls == 'archer':
         new_hero.attack_type = 1
-    elif name == 'hunter':
+    elif cls == 'hunter':
         new_hero.attack_type = 1
-    elif name == 'jav':
+    elif cls == 'jav':
         new_hero.attack_type = 1
-    elif name == 'mage':
+    elif cls == 'mage':
         new_hero.attack_type = 1
-    elif name == 'elemental':
+    elif cls == 'elemental':
         new_hero.attack_type = 1
-    elif name == 'warlock':
+    elif cls == 'warlock':
         new_hero.attack_type = 1
-    elif name == 'wizard':
+    elif cls == 'wizard':
         new_hero.attack_type = 1
-    elif name == 'healer':
+    elif cls == 'healer':
         new_hero.attack_type = 1
-    elif name == 'paladin':
+    elif cls == 'paladin':
         new_hero.attack_type = 1
-    elif name == 'druid':
+    elif cls == 'druid':
         new_hero.attack_type = 1
-    elif name == 'bard':
+    elif cls == 'bard':
         new_hero.attack_type = 1
-    elif name == 'princess':
+    elif cls == 'princess':
         new_hero.attack_type = 1
 
     return new_hero
 
 # =================================================================================================
-# Evaluates both boards and identifies obstacles into one board
+# Evaluates both boards (terrain and positions) and identifies obstacles into one board
+# obstacles is a list of characters that will be identified as an obstacle (e.g. L for lava, W for 
+# water, etc.)
 def get_obstacle_board(board_terrain: list[list[chr]], board_pos: list[list[chr]], obstacles: list[chr]) -> list[list[chr]]:
     # Determine the size of the boards
     rows = len(board_terrain)
@@ -314,9 +321,9 @@ def output_to_debug_log(map_: Map):
     debug_file = open("logs/debug_log.txt", "w")
 
     # Iterate through each element in the 4D list and write to the file
-    for s in range(len(map_.points)):
-        for p in range(len(map_.points[s])):
-            path_id = map_.points[s][p][0].main_path_id
+    for s in range(len(map_.points_same)):
+        for p in range(len(map_.points_same[s])):
+            path_id = map_.points_same[s][p][0].main_path_id
             if path_id < 26:
                 path_char = chr(65 + path_id - 3)  # A = 0, B = 1, ..., Z = 25
             else:
@@ -325,9 +332,9 @@ def output_to_debug_log(map_: Map):
                 path_char = f"{first_char}{second_char}"  # AA, AB, ...
             
             debug_file.write(f"\n******************************\nSection {s} - Path {path_char} : {path_id} = {map_.paths[path_id]}\n******************************\n")
-            for z in range(len(map_.points[s][p])):
-                zone_id = map_.points[s][p][z].zone_id
-                debug_file.write(f"Zone {zone_id}: {map_.points[s][p][z].points}\n")
+            for z in range(len(map_.points_same[s][p])):
+                zone_id = map_.points_same[s][p][z].zone_id
+                debug_file.write(f"Zone {zone_id}: {map_.points_same[s][p][z].points}\n")
 
     # Close the file
     debug_file.close()
@@ -346,16 +353,16 @@ def output_debug_log_excel(map_: Map):
         debug_file.write(f"\n")
 
         # Loop through the sections
-        for s in range(len(map_.points)):
+        for s in range(len(map_.points_same)):
             # Get the number of zones in the current section
-            num_zones = len(map_.points[s][0])
+            num_zones = len(map_.points_same[s][0])
             
             # Loop through each zone in the section
             for z in range(num_zones):
                 zone_output = f"{z}\t"
                 # Loop through each path in the section
-                for p in range(len(map_.points[s])):
-                    path_points = map_.points[s][p][z].points
+                for p in range(len(map_.points_same[s])):
+                    path_points = map_.points_same[s][p][z].points
                     # Convert list of points to a string and remove brackets
                     points_str = str(path_points).replace("[", "").replace("]", "")
                     zone_output += f"{points_str} \t"
@@ -371,11 +378,18 @@ def output_debug_log_excel(map_: Map):
 
 # Setup:
 if validate_inputs is False:
+    print("Error in inputs. Exiting program.")
     exit()
 
 maps = init_maps()
+heroes = init_heroes()
+
+for h in heroes:
+    print(h)
+    print(h.pivot_points)
+
 map_basic: Map = maps[basic_map_id]
-main_list = map_basic.get_all_allowable_points()
+main_list = map_basic.get_all_allowable_points_same()
 
 map_basic.print_map_with_zones()
 
