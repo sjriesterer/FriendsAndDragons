@@ -17,6 +17,7 @@ class Map:
         self.zones = self.get_zones_of_map()
         self.sections = self.get_sections_in_zones()
         self.paths = self.get_all_paths()
+        self.points_new = self.get_all_points()
         self.points_same = self.get_all_allowable_points_same()
         # Don't need these unless this map is non-basic:
         self.points_special_basic = []
@@ -618,6 +619,8 @@ class Map:
 # Gets the path where start_zone is the first and end_zone is the last
     def get_path_from_start_to_end(self, start_zone: int, end_zone: int) -> list[int] | None:
         for p in self.paths:
+            if len(p) == 1 and p[0] == start_zone == end_zone:
+                return p
             if p[0] == start_zone and p[-1] == end_zone:
                 return p
         return None
@@ -626,12 +629,11 @@ class Map:
 # 
     def get_path_id(self, start_zone: int, end_zone: int) -> int | None:
         for i in range(len(self.paths)):
+            if len(self.paths[i]) == 1 and self.paths[i][0] == start_zone == end_zone:
+                return i
             if self.paths[i][0] == start_zone and self.paths[i][len(self.paths[i])-1] == end_zone:
                 return i
         return None  # Return None if no such path is found
-    
-# =================================================================================================
-
 
 # endregion
 
@@ -660,6 +662,41 @@ class Map:
 # POINTS
 # =================================================================================================
 # region POINTS
+
+# Gets all allowable points of this map if both the pivot and the movable hero share this map.
+# For example, if this map is a Lava map and both the pivot and the hero are lava walkers,
+# then this will get all allowable points the hero can move to based on what section and path
+# the pivot is on and what zone the hero is in.
+# The list is a nested list that represents: 
+#       start zone of pivot > end zone of pivot > hero zone
+# For example, if the pivot is moving from zone 2 to 9 and the movable hero is in zone 10,
+# you can get the hero's allowable points by: list[2][9][10]
+    def get_all_points(self):
+        num_zones = len(self.zones)
+        allowable_points = [[[None for _ in range(num_zones)] for _ in range(num_zones)] for _ in range(num_zones)]
+
+        # s represents Pivot Start Zone
+        # e represents Pivot End Zone
+        # h represents Hero Zone
+        for s in range(len(self.zones)):
+            for e in range(len(self.zones)):
+                main_path_id = self.get_path_id(s, e)
+                if main_path_id is None:
+                    continue
+                main_path = self.paths[main_path_id]
+                for h in range(len(self.zones)):
+                    if h in main_path:
+                        points = self.get_points_main(self.zones, main_path, h)
+                    else:
+                        alt_path_id = self.get_path_id(s, h)
+                        if alt_path_id is None:
+                            continue
+                        alt_path = self.paths[alt_path_id]
+                        points = self.get_points_alt(self.zones, main_path, alt_path, h)
+                    allowable_points[s][e][h] = points
+        return allowable_points
+
+
 # Gets all allowable points of this map if both the pivot and the movable hero share this map.
 # For example, if this map is a Lava map and both the pivot and the hero are lava walkers,
 # then this will get all allowable points the hero can move to based on what section and path

@@ -340,6 +340,21 @@ def output_to_debug_log(map_: Map):
     debug_file.close()
 
 # =================================================================================================
+def output_to_debug_log2(map_: Map):
+    # Open the file for writing
+    debug_file = open("logs/debug_log2.txt", "w")
+
+    # Iterate through each element in the 3D list and write to the file
+    for i in range(len(map_.zones)):
+        for j in range(len(map_.zones)):
+            debug_file.write(f"\n****************\nPivot path: {i} to {j}\n****************\n")
+            for k in range(len(map_.zones)):
+                debug_file.write(f"{k:02} : {map_.points_new[i][j][k]}\n")
+
+    # Close the file
+    debug_file.close()
+
+# =================================================================================================
 def output_debug_log_excel(map_: Map):
     # Open the debug file for writing
     with open("logs/debug_log2.txt", "w") as debug_file:
@@ -412,5 +427,7 @@ print("alt hero starting zone id:", my_alt_hero_zone)
 for p in main_list[1][575][20].points:
     print(p)
 
-output_to_debug_log(map_basic)
+# output_to_debug_log(map_basic)
 output_debug_log_excel(map_basic)
+
+output_to_debug_log2(map_basic)
