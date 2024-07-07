@@ -668,7 +668,7 @@ class Map:
 # then this will get all allowable points the hero can move to based on what section and path
 # the pivot is on and what zone the hero is in.
 # The list is a nested list that represents: 
-#       start zone of pivot > end zone of pivot > hero zone
+#       start_zone_of_pivot > end_zone_of_pivot > hero_zone
 # For example, if the pivot is moving from zone 2 to 9 and the movable hero is in zone 10,
 # you can get the hero's allowable points by: list[2][9][10]
     def get_all_points(self):
@@ -758,43 +758,7 @@ class Map:
     def get_allowable_points_mismatch(self) -> list[list[list[list[tuple]]]]:
         allowable_points = []
 
-        for s in range(len(self.sections)):
-            section_points = []
-            zones_in_this_section = self.get_zones_in_section(self.sections[s])
-            paths_in_this_section = self.get_paths_in_section(self.sections[s])
-            for p in range(len(paths_in_this_section)):
-                path_points = []
-                main_path = paths_in_this_section[p]
-                pivot_start_zone = main_path[0]
-                pivot_end_zone = main_path[len(main_path)-1]
-                main_path_id = self.get_path_id(pivot_start_zone, pivot_end_zone)
-
-                for z in range(len(zones_in_this_section)):
-                    zone_points: Allowable_Point = Allowable_Point()
-                    zone = zones_in_this_section[z]
-                    current_zone_id = zone.id
-
-                    if current_zone_id in main_path:
-                        points = self.get_points_main(zones_in_this_section, main_path, current_zone_id)
-                        zone_points.alt_path = None
-                    else:
-                        alt_path_id = self.get_path_id(pivot_start_zone, current_zone_id)
-                        alt_path = self.get_path_from_start_to_end(pivot_start_zone, current_zone_id)
-                        points = self.get_points_alt(zones_in_this_section, main_path, alt_path, current_zone_id)
-                        zone_points.alt_path = alt_path_id
-                        zone_points.alt_path = alt_path
-
-                    zone_points.zone_id = current_zone_id
-                    zone_points.section = s
-                    zone_points.main_path_id = main_path_id
-                    zone_points.main_path = self.paths[p]
-                    zone_points.points.extend(points)
-                    
-                    path_points.append(zone_points)  # Append zone_points to path_points
-                
-                section_points.append(path_points)  # Append path_points to section_points
-            
-            allowable_points.append(section_points)  # Append section_points to allowable_points
+        
         
         return allowable_points
 
