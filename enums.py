@@ -9,12 +9,12 @@ class Board_Codes(Enum):
     empty_square_code = '.'
     monster_code = 'M'
 
-class Map_Codes(Enum):
-    basic_map = 0
-    lava_map = 1
-    water_map = 2
-    rubble_map = 3
-    flying_map = 4
+class Terrain_Codes(Enum):
+    basic_terrain = 0
+    lava_walker = 1
+    water_walker = 2
+    rubble_walker = 3
+    flying_hero = 4
 
 # A matchup is a relationship between the pivot's map and the movable hero's map.
 # If the pivot is a lava walker and the movable hero is just basic, then the matchup

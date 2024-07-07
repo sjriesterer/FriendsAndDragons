@@ -1,12 +1,12 @@
-from enums import Board_Codes, Map_Codes
+from enums import Board_Codes, Terrain_Codes
 from modules.point import Allowable_Point
 from modules.zone import Zone
 
 class Map:
     empty_square_code = Board_Codes.empty_square_code.value
     obstacle_code = Board_Codes.obstacle_code.value
-    basic_map_id = Map_Codes.basic_map.value
-    flying_map_id = Map_Codes.flying_map.value
+    basic_map_id = Terrain_Codes.basic_terrain.value
+    flying_map_id = Terrain_Codes.flying_hero.value
     
     def __init__(self, id=0, name="", board=None):
         self.id = 0
@@ -758,7 +758,7 @@ class Map:
     def get_allowable_points_mismatch(self) -> list[list[list[list[tuple]]]]:
         allowable_points = []
 
-        
+
         
         return allowable_points
 
