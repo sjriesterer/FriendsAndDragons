@@ -17,20 +17,16 @@ class Map:
         self.zones = self.get_zones_of_map()
         self.sections = self.get_sections_in_zones()
         self.paths = self.get_all_paths()
-        self.points_new = self.get_all_points()
+        self.points_new = self.get_all_points_of_map()
         self.points_same = self.get_all_allowable_points_same()
-        # Don't need these unless this map is non-basic:
-        self.points_special_basic = []
+        # Don't need these points unless the inputs call for them
+        self.points_lava_basic = []
+        self.points_water_basic = []
+        self.points_rubble_basic = []
+        self.points_flying_basic = []
         self.points_flying_lava = []
         self.points_flying_water = []
         self.points_flying_rubble = []
-        if id > self.basic_map_id:
-            self.points_special_basic = self.get_allowable_points_mismatch()
-        # Only need these if the map is a flying map:
-        if id == self.flying_map_id:
-            self.points_flying_lava = self.get_allowable_points_mismatch()
-            self.points_flying_water = self.get_allowable_points_mismatch()
-            self.points_flying_rubble = self.get_allowable_points_mismatch()
 
     def __str__(self):
         return (f'ID: {self.id}, Name: {self.name}, '
@@ -60,7 +56,7 @@ class Map:
 
 # =================================================================================================
     def print_map_with_zones(self):
-        print("\nZone Map: ", self.name)
+        print("Zone Map: ", self.name)
 
         # Track which zones have been printed in this row
         printed_zones = []
@@ -141,28 +137,74 @@ class Map:
             return False
 
         # Define the conditions for different types of chokepoints
-        return (
-            (self.is_top_left_corner(row, col) and 
-                ((self.obstacle_below(row, col) and self.empty_square_right(row, col)) or (self.obstacle_right(row, col) and self.empty_square_below(row, col)))) or # Top left corner
-            (self.is_top_right_corner(row, col) and 
-                ((self.obstacle_below(row, col) and self.empty_square_left(row, col)) or (self.obstacle_left(row, col) and self.empty_square_below(row, col)))) or # To right corner
-            (self.is_bottom_left_corner(row, col) and 
-                ((self.obstacle_above(row, col) and self.empty_square_right(row, col)) or (self.obstacle_right(row, col) and self.empty_square_above(row, col)))) or # Bottom left corner
-            (self.is_bottom_right_corner(row, col) and 
-                ((self.obstacle_above(row, col) and self.empty_square_left(row, col)) or (self.obstacle_left(row, col) and self.empty_square_above(row, col)))) or # Bottom right corner
-            (self.edge_above(row, col) and 
-                ((self.obstacle_left_and_right(row, col) and self.empty_square_below(row, col)) or (self.obstacle_below(row,col) and (self.empty_square_left(row,col) or self.empty_square_right(row, col))))) or  # Above Edge
-            (self.edge_below(row, col) and 
-                ((self.obstacle_left_and_right(row, col) and self.empty_square_above(row, col)) or (self.obstacle_above(row,col) and (self.empty_square_left(row,col) or self.empty_square_right(row, col))))) or  # Below Edge
-            (self.edge_left(row, col) and 
-                ((self.obstacle_above_and_below(row,col) and self.empty_square_right(row,col)) or (self.obstacle_right(row, col) and (self.empty_square_above(row, col) or self.empty_square_below(row, col))))) or  # Left Edge
-            (self.edge_right(row, col) and 
-                ((self.obstacle_above_and_below(row,col) and self.empty_square_left(row,col)) or (self.obstacle_left(row, col) and (self.empty_square_above(row, col) or self.empty_square_below(row, col))))) or  # Right Edge
-            (self.is_in_middle(row, col) and (
-                (self.obstacle_above_and_below(row, col) and (self.empty_square_left(row, col) or self.empty_square_right(row, col))) or
-                (self.obstacle_left_and_right(row, col) and (self.empty_square_above(row, col) or self.empty_square_below(row, col))) # Middle
-            ))
-        )
+    def is_chokepoint(self, row: int, col: int) -> bool:
+        # Ensure the current cell is an empty square
+        if self.board[row][col] != self.empty_square_code:
+            return False
+
+        # Top left corner
+        if self.is_top_left_corner(row, col):
+            if (self.obstacle_below(row, col) and self.empty_square_right(row, col)) or (self.obstacle_right(row, col) and self.empty_square_below(row, col)):
+                return True
+            else:
+                return False
+            
+        # Top right corner
+        if self.is_top_right_corner(row, col):
+            if (self.obstacle_below(row, col) and self.empty_square_left(row, col)) or (self.obstacle_left(row, col) and self.empty_square_below(row, col)):
+                return True
+            else:
+                return False
+
+        # Bottom left corner
+        if self.is_bottom_left_corner(row, col):
+            if (self.obstacle_above(row, col) and self.empty_square_right(row, col)) or (self.obstacle_right(row, col) and self.empty_square_above(row, col)):
+                return True
+            else:
+                return False
+
+        # Bottom right corner
+        if self.is_bottom_right_corner(row, col):
+            if (self.obstacle_above(row, col) and self.empty_square_left(row, col)) or (self.obstacle_left(row, col) and self.empty_square_above(row, col)):
+                return True
+            else:
+                return False
+
+        # Above edge
+        if self.edge_above(row, col):
+            if (self.obstacle_left_and_right(row, col) and self.empty_square_below(row, col)) or (self.obstacle_below(row, col) and (self.empty_square_left(row, col) or self.empty_square_right(row, col))):
+                return True
+            else:
+                return False
+
+        # Below edge
+        if self.edge_below(row, col):
+            if (self.obstacle_left_and_right(row, col) and self.empty_square_above(row, col)) or (self.obstacle_above(row, col) and (self.empty_square_left(row, col) or self.empty_square_right(row, col))):
+                return True
+            else:
+                return False
+
+        # Left edge
+        if self.edge_left(row, col):
+            if (self.obstacle_above_and_below(row, col) and self.empty_square_right(row, col)) or (self.obstacle_right(row, col) and (self.empty_square_above(row, col) or self.empty_square_below(row, col))):
+                return True
+            else:
+                return False
+
+        # Right edge
+        if self.edge_right(row, col):
+            if (self.obstacle_above_and_below(row, col) and self.empty_square_left(row, col)) or (self.obstacle_left(row, col) and (self.empty_square_above(row, col) or self.empty_square_below(row, col))):
+                return True
+            else:
+                return False
+
+        # Middle
+        if self.is_in_middle(row, col):
+            if (self.obstacle_above_and_below(row, col) and (self.empty_square_left(row, col) or self.empty_square_right(row, col))) or (self.obstacle_left_and_right(row, col) and (self.empty_square_above(row, col) or self.empty_square_below(row, col))):
+                return True
+            else:
+                return False
+
 # endregion
 
 # =================================================================================================
@@ -178,7 +220,7 @@ class Map:
     def square_is_obstacle(self, row, col):
         return self.board[row][col] == self.obstacle_code
 # =================================================================================================
-    # Diagnoal obstacles check
+    # Diagonal obstacles check
     def obstacle_above_left(self, row, col):
         return self.board[row-1][col-1] == self.obstacle_code
     def obstacle_above_right(self, row, col):
@@ -325,19 +367,19 @@ class Map:
             elif self.obstacle_right(row, col) and self.obstacle_below(row, col) and self.obstacle_below_left(row, col):
                 return True
         elif self.edge_below(row, col):
-            if self.obstacle_left_and_right(row, col) and self.obstacle_below_left(row, col) and self.obstacle_above_left(row, col):
+            if self.obstacle_left_and_right(row, col) and self.obstacle_above_left(row, col) and self.obstacle_above_left(row, col):
                 return True
             elif self.obstacle_left(row, col) and self.obstacle_above(row, col) and self.obstacle_above_right(row, col):
                 return True
             elif self.obstacle_right(row, col) and self.obstacle_above(row, col) and self.obstacle_above_left(row, col):
                 return True
         
-        return not self.does_path_exist(start, end, chokepoint)
+        return not self.does_path_exist(self.board, start, end, chokepoint)
 
 # # =================================================================================================
 # True if a path exists on the board from start to end and not passing through the chokepoint
-    def does_path_exist(self, start: tuple[int, int], end: tuple[int, int], chokepoint: tuple[int, int]) -> bool:
-        rows, cols = len(self.board), len(self.board[0])
+    def does_path_exist(self, board: list[list[chr]], start: tuple[int, int], end: tuple[int, int], chokepoint: tuple[int, int] = None) -> bool:
+        rows, cols = len(board), len(board[0])
         visited = [[False for _ in range(cols)] for _ in range(rows)]
 
         def is_valid_move(board, visited, row, col, chokepoint) -> bool:
@@ -345,7 +387,7 @@ class Map:
             if not (0 <= row < rows and 0 <= col < cols):
                 return False
             # Check if the position is the chokepoint or already visited
-            if visited[row][col] or (row, col) == chokepoint:
+            if visited[row][col] or (chokepoint is not None and (row, col) == chokepoint):
                 return False
             # Check if the position is not an obstacle
             return board[row][col] != self.obstacle_code
@@ -413,6 +455,10 @@ class Map:
                     return path[i]
         return None
 
+# =================================================================================================
+#
+    def is_pivot_deadend(self, pivot_map: 'Map', point: tuple) -> bool:
+        return self.get_zone_of_point(point, pivot_map.zones).is_deadend
 
 # endregion
 
@@ -533,11 +579,23 @@ class Map:
 
 # =================================================================================================
 # Gets the zone id of the point given
-    def get_zone_of_pivot(self, point: tuple) -> Zone | None:
-        for zone in self.zones:
+    def get_zone_of_point(self, point: tuple, zones: list[Zone] = None) -> Zone | None:
+        if zones is None:
+            zones = self.zones
+        for zone in zones:
             if point in zone.points:
                 return zone
         return None  # Return None if no zone contains the point
+
+# =================================================================================================
+#
+    def get_zone_id_of_point(self, point: tuple, zones: list[Zone] = None) -> int | None:
+        if zones is None:
+            zones = self.zones
+        for zone in zones:
+            if point in zone.points:
+                return zone.id
+        return None
 
 # =================================================================================================
 # Gets a minimized list of Zone objects of only the section given
@@ -671,7 +729,7 @@ class Map:
 #       start_zone_of_pivot > end_zone_of_pivot > hero_zone
 # For example, if the pivot is moving from zone 2 to 9 and the movable hero is in zone 10,
 # you can get the hero's allowable points by: list[2][9][10]
-    def get_all_points(self):
+    def get_all_points_of_map(self):
         num_zones = len(self.zones)
         allowable_points = [[[None for _ in range(num_zones)] for _ in range(num_zones)] for _ in range(num_zones)]
 
@@ -755,12 +813,44 @@ class Map:
 
 # =================================================================================================
 #
-    def get_allowable_points_mismatch(self) -> list[list[list[list[tuple]]]]:
+    def get_allowable_points_mismatch_old(self, pivot_terrain_code: int, pivot_map: 'Map') -> list[list[list[list[tuple]]]]:
         allowable_points = []
-
-
+        num_rows = len(self.board[0])
+        num_cols = len(self.board)
+        num_entries = num_rows * num_cols
         
+        allowable_points = [[None for _ in range(num_entries)] for _ in 2]
+
         return allowable_points
+
+
+    def get_all_points_mismatch_maps(self, pivot_terrain_code: int, pivot_map: 'Map') -> dict[tuple[tuple[int, int], tuple[int, int]], str]:
+        result = {}
+        rows = len(pivot_map.board)
+        cols = len(pivot_map.board[0]) if rows > 0 else 0
+
+        for r1 in range(rows):
+            for c1 in range(cols):
+                for r2 in range(rows):
+                    for c2 in range(cols):
+                        if r1 == r2 and c1 == c2:
+                            continue
+                        point_pivot = (r1, c1)
+                        point_hero = (r2, c2)
+                        path_exists = self.does_path_exist(pivot_map.board, point_pivot, point_hero)
+                        if path_exists:
+                            hero_zone = self.get_zone_of_point(point_hero)
+                            allowable_points = []
+                            allowable_points.extend(self.get_points_in_zone(hero_zone))
+                            is_pivot_de = self.is_pivot_deadend(pivot_map, point_hero)
+                            if is_pivot_de:
+                                pass
+                            else:
+                                pass
+                            result[(point_pivot, point_hero)] = allowable_points
+
+        return result
+    
 
 # =================================================================================================
 # Gets a list of all allowable points for a moveable hero who is on the main path of the pivot

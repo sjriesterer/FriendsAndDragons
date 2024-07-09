@@ -210,10 +210,6 @@ def init_boards():
     # Parse input boards from list of strings to lists of list of characters:
     board_terrain = parse_input(format_input(board_terrain_input))
     board_positions = parse_input(format_input(board_positions_input))
-    print("\nTerrain:")
-    print_map_plain(board_terrain)
-    print("\nPositions:")
-    print_map_plain(board_positions)
 
     # Count specific number of obstacles:
     num_lava_obstacles = count_obstacles(board_terrain, [lava_code])
@@ -459,39 +455,52 @@ if validate_inputs is False:
     print("Error in inputs. Exiting program.")
     exit()
 
+print("==============================================")
+# Get random terrain and position
+random_terrain = inputs.get_random_terrain(8,6,15,3,9,3)
+# random_positions = inputs.get_random_positions(random_terrain, 8,6,4)
+board_terrain_input = inputs.convert_to_string_list(random_terrain)
+# board_positions_input = inputs.convert_to_string_list(random_positions)
+
+for r in random_terrain:
+    print(r)
+
+# Init
 init_boards()
 init_needed_maps()
 maps = get_maps()
 heroes = init_heroes()
 
-for h in heroes:
-    print(h)
-    print(h.pivot_points)
+# for h in heroes:
+#     print(h)
+#     print(h.pivot_points)
 
-map_basic: Map = maps[basic_terrain]
-main_list = map_basic.get_all_allowable_points_same()
-
-map_basic.print_map_with_zones()
+# main_list = map_basic.get_all_allowable_points_same()
+maps[basic_terrain].print_map_with_zones()
+maps[lava_walker].print_map_with_zones()
+maps[water_walker].print_map_with_zones()
+maps[rubble_walker].print_map_with_zones()
 
 # Simulation
-my_main_hero_start_zone = 2
-my_main_hero_end_zone = 25
-my_main_hero_zone = 9
-my_alt_hero_zone = 19
+# my_main_hero_start_zone = 2
+# my_main_hero_end_zone = 25
+# my_main_hero_zone = 9
+# my_alt_hero_zone = 19
 
-my_main_path = map_basic.get_path_from_start_to_end(my_main_hero_start_zone, my_main_hero_end_zone)
-print("main path id: ", my_main_path)
-print("main hero starting zone id:", my_main_hero_zone)
+# my_main_path = map_basic.get_path_from_start_to_end(my_main_hero_start_zone, my_main_hero_end_zone)
+# print("main path id: ", my_main_path)
+# print("main hero starting zone id:", my_main_hero_zone)
 
-my_alt_path = map_basic.get_path_from_start_to_end(my_main_hero_start_zone, my_alt_hero_zone)
-print("\nalt path id: ", my_alt_path)
-print("alt hero starting zone id:", my_alt_hero_zone)
+# my_alt_path = map_basic.get_path_from_start_to_end(my_main_hero_start_zone, my_alt_hero_zone)
+# print("\nalt path id: ", my_alt_path)
+# print("alt hero starting zone id:", my_alt_hero_zone)
 
 
 # how to iterate through list
-for p in main_list[1][575][20].points:
-    print(p)
+# for p in main_list[1][575][20].points:
+#     print(p)
 
 # output_to_debug_log(map_basic)
-output_debug_log_excel(map_basic)
-output_to_debug_log2(map_basic)
+# output_debug_log_excel(map_basic)
+# output_to_debug_log2(map_basic)
+
