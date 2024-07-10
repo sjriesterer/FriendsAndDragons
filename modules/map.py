@@ -104,7 +104,7 @@ class Map:
         print("------", end = "")
         for i in range(len(self.board[0])):
             print("---", end = "")
-        print("\n")
+        print("     :")
     
 # =================================================================================================
     def print_map_details(self):

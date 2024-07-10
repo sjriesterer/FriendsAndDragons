@@ -201,6 +201,24 @@ Case 1: Hero starts on a deadend zone:
 Case 2: Hero starts on a nondeadend zone: 
     Any connected deadend zone (except upstream from the alt path)
 
+## Pivot walker moving basic heros
+
+PDE = pivot deadend
+
+Both the pivot and the hero will have different maps (pivot map, hero map)
+
+If the pivot has a path through his map to reach the hero:
+    The hero can move to anywhere in his current zone
+    if the hero is on a non-PDE:
+        The hero can move to any connected zone in his section as long as the zone point is not a PDE 
+    if the hero is on a PDE or if a PDE is connected to the hero's connected zones:    
+            Case 1: The pivot path goes to or through the PDE
+                The hero can move to the zone upstream from the PDE
+            Case 2: The pivot path doesn't go to or through the PDE
+                The hero can occupy the PDE and the connected zone to the left or up from the PDE
+            Case 2b: The pivot path doesn't go through the PDE, pivot is on the right or down
+                The hero can occupy the PDE and the connected zone to the right or down from the PDE
+
 
 ## Damage Assessment
 

@@ -5,6 +5,7 @@
 # =================================================================================================
 # IMPORTS
 # =================================================================================================
+import random
 import sys
 import os
 from modules.hero import Hero
@@ -455,21 +456,40 @@ if validate_inputs is False:
     print("Error in inputs. Exiting program.")
     exit()
 
+def get_random_number(min_val: int, max_val: int) -> int:
+    return random.randint(min_val, max_val)
+
 print("==============================================")
+
+num_rows = get_random_number(8,8)
+num_cols = get_random_number(6,6)
+num_obstacles = get_random_number(4,10)
+num_lava = get_random_number(8,12)
+num_water = get_random_number(0,0)
+num_rubble = get_random_number(0,0)
+
 # Get random terrain and position
-random_terrain = inputs.get_random_terrain(8,6,15,3,9,3)
+# random_terrain = inputs.get_random_terrain(num_rows,num_cols,num_obstacles,num_lava,num_water,num_rubble)
 # random_positions = inputs.get_random_positions(random_terrain, 8,6,4)
-board_terrain_input = inputs.convert_to_string_list(random_terrain)
+# board_terrain_input = inputs.convert_to_string_list(random_terrain)
 # board_positions_input = inputs.convert_to_string_list(random_positions)
 
-for r in random_terrain:
-    print(r)
+# for r in random_terrain:
+#     print(r)
 
 # Init
 init_boards()
+
+for r in board_terrain:
+    print(r)
+
+print("\n")
+for r in board_positions:
+    print(r)
+
 init_needed_maps()
 maps = get_maps()
-heroes = init_heroes()
+# heroes = init_heroes()
 
 # for h in heroes:
 #     print(h)
@@ -477,9 +497,12 @@ heroes = init_heroes()
 
 # main_list = map_basic.get_all_allowable_points_same()
 maps[basic_terrain].print_map_with_zones()
-maps[lava_walker].print_map_with_zones()
-maps[water_walker].print_map_with_zones()
-maps[rubble_walker].print_map_with_zones()
+if maps[lava_walker] is not None:
+    maps[lava_walker].print_map_with_zones()
+if maps[water_walker] is not None:
+    maps[water_walker].print_map_with_zones()
+if maps[rubble_walker] is not None:
+    maps[rubble_walker].print_map_with_zones()
 
 # Simulation
 # my_main_hero_start_zone = 2

@@ -41,7 +41,6 @@ class Inputs():
         "l...rro....."
     ]
 
-
 # =================================================================================================
     # The positions of the monsters and heros on the board. (case insensitive, spaces will be eliminated)
     # Heros are ids 0-6
