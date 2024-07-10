@@ -21,18 +21,18 @@ This script will determine the top bests moves in the App Friends & Dragons.
 
 ## Definitions
 
-
 - Obstacle: Anything a hero cannot move through (lava, water, block, rubble, monster)
 - Chokepoint: An empty square in-between barriers or the edge of the map and at least one empty 
     square in the other cardinal directions
-- Deadend: A chokepoint where the path from one side to the other is only possible through the 
+- Deadend: DE: A chokepoint where the path from one side to the other is only possible through the 
     chokepoint, or if it is next to another deadend if only one empty square is adjacent
-- Section: A part of the map seperated from other sections by barries
+- Section: A part of the map separated from other sections by barries
 - Zone: A part of the map within a section where a hero can move. Zones are seperated by deadends.
-- Deadend Zone: A deadend by itself is a seperate zone
-- Pivot hero: The hero moving first
-- Movable hero: The non-pivot heroes
+- Deadend Zone: A zone of one square that is a deadend (also just called a deadend)
+- Pivot hero: The hero moving first (also just called pivot)
+- Movable hero: The non-pivot heroes (also just called hero)
 - Pivot point: The current point of the pivot being evaluated
+- Pivot deadend: PDE: 
 - Moveable point: The current point of the movable hero being evaluated
 - Main Path: Shortest path from the pivot's starting zone to the current pivot point being 
     evaluated. This is the main path of the pivot that he must make.
@@ -153,8 +153,10 @@ allowable points of the pivot hero. The current point being evaluated here is ca
 All other heroes move in their allowable moves until all configurations have been evaluated. These points are 
 called the current moveable points.
 
+## 
+
 Pivot hero can move anywhere in his section. The obstacle board he uses corresponds to his traits. For example, a lava walker will use the board_lava.
-Moveable heroes can move anywhere in their zones if in the same section as the pivot, else they cannot move. A moveable heroe with the same trait
+Moveable heroes can move anywhere in their zones if in the same section as the pivot, else they cannot move. A moveable hero with the same trait
     as the pivot hero will use that same board. For example, if the pivot and the movable hero are a lava walker, both will use the board_lava as their
     obstacle board.
 Moveable heroes can move to some deadends considering the following:
@@ -213,7 +215,7 @@ If the pivot has a path through his map to reach the hero:
         The hero can move to any connected zone in his section as long as the zone point is not a PDE 
     if the hero is on a PDE or if a PDE is connected to the hero's connected zones:    
             Case 1: The pivot path goes to or through the PDE
-                The hero can move to the zone upstream from the PDE
+                The hero can move to the zones upstream from the PDE
             Case 2: The pivot path doesn't go to or through the PDE
                 The hero can occupy the PDE and the connected zone to the left or up from the PDE
             Case 2b: The pivot path doesn't go through the PDE, pivot is on the right or down
