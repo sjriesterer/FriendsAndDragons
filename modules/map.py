@@ -5,6 +5,9 @@ from modules.zone import Zone
 class Map:
     empty_square_code = Board_Codes.empty_square_code.value
     obstacle_code = Board_Codes.obstacle_code.value
+    lava_code = Board_Codes.lava_code.value
+    water_code = Board_Codes.water_code.value
+    rubble_code = Board_Codes.rubble_code.value
     basic_map_id = Terrain_Codes.basic_terrain.value
     flying_map_id = Terrain_Codes.flying_hero.value
     
@@ -94,7 +97,7 @@ class Map:
                 # If no zone contains the current position, check for obstacle
                 if not found:
                 # else:
-                    if self.board[i][j] == Board_Codes.obstacle_code.value:
+                    if self.board[i][j] == self.obstacle_code:
                         print('[]', end=' ')
                     else:
                         print('..', end=' ')
@@ -104,8 +107,89 @@ class Map:
         print("------", end = "")
         for i in range(len(self.board[0])):
             print("---", end = "")
-        print("     :")
+        print("")
     
+# =================================================================================================
+    def print_map_with_positions(self, hero_pos: list[tuple]):
+        print("Position Map: ", self.name)
+
+        # Print column numbers
+        print('    ', end='')
+        for col in range(len(self.board[0])):
+            if col == 10:
+                print(" ", end= "")
+            print(f'{col:2}', end=' ')
+        print()
+
+        print("------", end = "")
+        for i in range(len(self.board[0])):
+            print("---", end = "")
+        print("\n", end = "")
+
+        # Loop through the rows
+        for i in range(len(self.board)):
+            print(f'{i:2} | ', end='')
+            # Loop through the columns
+            for j in range(len(self.board[i])):
+                if self.board[i][j] == self.obstacle_code:
+                    print('[]', end=' ')
+                else:
+                    found = False
+                    for h in range(len(hero_pos)):
+                        if hero_pos[h][0] == i and hero_pos[h][1] == j:
+                            found = True
+                            print(f'{h:02}', end=' ')
+                    if not found:
+                        print('..', end=' ')
+                    else:
+                        found = False
+            print('|')
+
+        print("------", end = "")
+        for i in range(len(self.board[0])):
+            print("---", end = "")
+        print("")
+
+# =================================================================================================
+    def print_map_with_terrains(self, terrain: list[list[chr]]):
+        print("Terrain Map: ", self.name)
+
+        # Print column numbers
+        print('    ', end='')
+        for col in range(len(self.board[0])):
+            if col == 10:
+                print(" ", end= "")
+            print(f'{col:2}', end=' ')
+        print()
+
+        print("------", end = "")
+        for i in range(len(self.board[0])):
+            print("---", end = "")
+        print("\n", end = "")
+
+        # Loop through the rows
+        for i in range(len(terrain)):
+            print(f'{i:2} | ', end='')
+            # Loop through the columns
+            for j in range(len(terrain[i])):
+                if terrain[i][j] == self.obstacle_code:
+                    print('[]', end=' ')
+                elif terrain[i][j] == self.lava_code:
+                    print('LL', end=' ')
+                elif terrain[i][j] == self.water_code:
+                    print('//', end=' ')
+                elif terrain[i][j] == self.rubble_code:
+                    print(';;', end=' ')
+                else:
+                    print('..', end=' ')
+
+            print('|')
+
+        print("------", end = "")
+        for i in range(len(self.board[0])):
+            print("---", end = "")
+        print("")
+
 # =================================================================================================
     def print_map_details(self):
         print(self.name)
@@ -986,4 +1070,16 @@ class Map:
         self.remove_duplicates(points)
         points = sorted(points, key=lambda p: (p[0], p[1]))
         return points
+
+# =================================================================================================
+#
+    def is_point_in_section(self, section: int, point: tuple) -> bool:
+        for z in self.zones:
+            if point in z:
+                if section == z.section:
+                    return True
+                else:
+                    return False
+        return False
+    
 #endregion

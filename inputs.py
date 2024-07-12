@@ -19,7 +19,7 @@ class Inputs():
     # w = Water
     # r = Rubble
     # . = Free square
-    terrain2 = [
+    terrain1 = [
         "..o...",
         "ooo...",
         ".....l",
@@ -30,15 +30,29 @@ class Inputs():
         "l...rr"
     ]
     
-    terrain = [
+    terrain2 = [
         "..o...o.....",
         "ooo...o.rrr.",
         ".....lo.....",
         "oor.llollll.",
         "............",
         "...ll.ooo.oo",
-        "lll...o.....",
-        "l...rro....."
+        "lll...o..www",
+        "l...rro...ww"
+    ]
+
+
+    terrain = [
+        "..ooo.....",
+        ".o........",
+        "o...ooooo.",
+        "o.ooo...o.",
+        "o.oo....o.",
+        "oooooo....",
+        "..........",
+        ".oo..o.ooo",
+        "...oo.....",
+        "....o.....",
     ]
 
 # =================================================================================================
@@ -47,14 +61,27 @@ class Inputs():
     # Monster ids are any letter
     # Empty squares are '.'
     positions = [
-        "0...........",
-        "...........5",
-        "21..........",
+        "1.........",
+        "....6.....",
+        "..........",
+        ".7.......2",
+        ".....4....",
+        "..........",
+        ".5........",
+        "......3...",
+        "..........",
+        "8........0",
+    ]
+
+    positions2 = [
         "............",
-        "..34........",
         "............",
         "............",
-        "............"
+        "............",
+        "012345678...",
+        "............",
+        "............",
+        "............",
     ]
 
 # =================================================================================================
@@ -84,7 +111,10 @@ class Inputs():
         Hero(cls="mage", name="Elethas1", mighty_blow=2),
         Hero(cls="mage", name= "Elethas2", mighty_blow=1),
         Hero(cls="healer", terrain_id=lava_map_id),
-        Hero(cls="rogue",  name="Gloom", pivot=True, terrain_id=rubble_map_id, rubble=1, tumble=2)
+        Hero(cls="rogue",  name="Gloom", pivot=True, terrain_id=rubble_map_id, rubble=1, tumble=2),
+        Hero(cls="healer", terrain_id=lava_map_id),
+        Hero(cls="healer", terrain_id=lava_map_id),
+        Hero(cls="healer", terrain_id=lava_map_id),
     ]
 
     def get_random_terrain(self, rows: int, cols: int, num_O: int = None, num_L: int = None, num_W: int = None, num_R: int = None) -> list[list[str]]:

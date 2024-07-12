@@ -35,7 +35,7 @@ hero_inputs = inputs.heroes
 board_terrain = None
 board_positions = None
 maps: list[Map] = []
-heros: list[Hero] = []
+heroes: list[Hero] = []
 
 # Number of specific obstacles in terrain:
 num_lava_obstacles: int = None
@@ -489,20 +489,28 @@ for r in board_positions:
 
 init_needed_maps()
 maps = get_maps()
-# heroes = init_heroes()
+heroes = init_heroes()
 
 # for h in heroes:
 #     print(h)
 #     print(h.pivot_points)
 
 # main_list = map_basic.get_all_allowable_points_same()
+
+hero_pos: list[tuple] = []
+for h in heroes:
+    hero_pos.append(h.starting_point)
+
 maps[basic_terrain].print_map_with_zones()
-if maps[lava_walker] is not None:
-    maps[lava_walker].print_map_with_zones()
-if maps[water_walker] is not None:
-    maps[water_walker].print_map_with_zones()
-if maps[rubble_walker] is not None:
-    maps[rubble_walker].print_map_with_zones()
+maps[basic_terrain].print_map_with_terrains(board_terrain)
+maps[basic_terrain].print_map_with_positions(hero_pos)
+
+# if maps[lava_walker] is not None:
+#     maps[lava_walker].print_map_with_zones()
+# if maps[water_walker] is not None:
+#     maps[water_walker].print_map_with_zones()
+# if maps[rubble_walker] is not None:
+#     maps[rubble_walker].print_map_with_zones()
 
 # Simulation
 # my_main_hero_start_zone = 2
