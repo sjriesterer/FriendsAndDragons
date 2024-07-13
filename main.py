@@ -409,7 +409,7 @@ def output_to_debug_log2(map_: Map):
         for j in range(len(map_.zones)):
             debug_file.write(f"\n****************\nPivot path: {i} to {j}\n****************\n")
             for k in range(len(map_.zones)):
-                debug_file.write(f"{k:02} : {map_.points_new[i][j][k]}\n")
+                debug_file.write(f"{k:02} : {map_.points[i][j][k]}\n")
 
     # Close the file
     debug_file.close()
