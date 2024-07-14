@@ -1,5 +1,4 @@
 from enums import Board_Codes, Terrain_Codes
-from modules.point import Allowable_Point
 from modules.zone import Zone
 
 class Map:
@@ -20,15 +19,15 @@ class Map:
         self.zones = self.get_zones_of_map()
         self.sections = self.get_sections_in_zones()
         self.paths = self.get_all_paths()
-        self.points = self.get_all_points_of_map()
+        # self.points = self.get_all_points_of_map()
         # Don't need these points unless the inputs call for them
-        self.points_lava_basic = []
-        self.points_water_basic = []
-        self.points_rubble_basic = []
-        self.points_flying_basic = []
-        self.points_flying_lava = []
-        self.points_flying_water = []
-        self.points_flying_rubble = []
+        # self.points_lava_basic = []
+        # self.points_water_basic = []
+        # self.points_rubble_basic = []
+        # self.points_flying_basic = []
+        # self.points_flying_lava = []
+        # self.points_flying_water = []
+        # self.points_flying_rubble = []
 
     def __str__(self):
         return (f'ID: {self.id}, Name: {self.name}, '
