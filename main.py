@@ -25,9 +25,9 @@ from random_map import Random_Map
 # =================================================================================================
 
 inputs = Inputs()
-board_terrain_input = inputs.terrain
-board_positions_input = inputs.positions
-hero_inputs = inputs.heroes
+input_board_terrain = inputs.terrain
+input_board_positions = inputs.positions
+input_heroes = inputs.heroes
 
 # =================================================================================================
 # GLOBALS
@@ -53,40 +53,40 @@ need_rubble_map = False
 need_flying_map = False
 
 # =================================================================================================
-# Codes
+# CODES & IDS
 # =================================================================================================
-
 # Terrain codes
-lava_code = Board_Codes.lava_code.value
-water_code = Board_Codes.water_code.value
-rubble_code = Board_Codes.rubble_code.value
-ice_code = Board_Codes.lava_code.value
-obstacle_code = Board_Codes.obstacle_code.value
-empty_square_code = Board_Codes.empty_square_code.value
+code_lava = Board_Codes.lava_code.value
+code_water = Board_Codes.water_code.value
+code_rubble = Board_Codes.rubble_code.value
+code_ice = Board_Codes.lava_code.value
+code_obstacle = Board_Codes.obstacle_code.value
+code_empty = Board_Codes.empty_square_code.value
 
 # Monster codes
 monster_codes = [Monsters_Codes.monster1.value, Monsters_Codes.monster2.value, Monsters_Codes.monster3.value, Monsters_Codes.monster4.value]
 
 # Terrain Map Ids
-basic_terrain = Terrain_Codes.basic_terrain.value
-lava_walker = Terrain_Codes.lava_walker.value
-water_walker = Terrain_Codes.water_walker.value
-rubble_walker = Terrain_Codes.rubble_walker.value
-flying_hero = Terrain_Codes.flying_hero.value
+map_type_basic = Terrain_Codes.basic_terrain.value
+map_type_lava = Terrain_Codes.lava_walker.value
+map_type_water = Terrain_Codes.water_walker.value
+map_type_rubble = Terrain_Codes.rubble_walker.value
+map_type_flying = Terrain_Codes.flying_hero.value
 
 # Map Matchup Ids
-basic_match_id = Map_Matchups.basic.value
-lava_match_id = Map_Matchups.lava.value
-water_match_id = Map_Matchups.water.value
-rubble_match_id = Map_Matchups.rubble.value
-flying_match_id = Map_Matchups.flying.value
-lava_basic_match_id = Map_Matchups.lava_basic.value
-water_basic_match_id = Map_Matchups.water_basic.value
-rubble_basic_match_id = Map_Matchups.rubble_basic.value
-flying_basic_match_id = Map_Matchups.flying_basic.value
-flying_lava_match_id = Map_Matchups.flying_lava.value
-flying_water_match_id = Map_Matchups.flying_water.value
-flying_rubble_match_id = Map_Matchups.flying_rubble.value
+map_match_basic = Map_Matchups.basic.value
+map_match_lava = Map_Matchups.lava.value
+map_match_water = Map_Matchups.water.value
+map_match_rubble = Map_Matchups.rubble.value
+map_match_flying = Map_Matchups.flying.value
+map_match_lava_basic = Map_Matchups.lava_basic.value
+map_match_water_basic = Map_Matchups.water_basic.value
+map_match_rubble_basic = Map_Matchups.rubble_basic.value
+map_match_flying_basic = Map_Matchups.flying_basic.value
+map_match_flying_lava = Map_Matchups.flying_lava.value
+map_match_flying_water = Map_Matchups.flying_water.value
+map_match_flying_rubble = Map_Matchups.flying_rubble.value
+map_matches = [map_match_basic, map_match_lava, map_match_water, map_match_rubble, map_match_lava_basic, map_match_water_basic, map_match_rubble_basic, map_match_flying_basic, map_match_flying_lava, map_match_flying_water, map_match_flying_rubble]
 
 # Attack Type codes
 # melee_code = Attack_Types.melee
@@ -125,8 +125,8 @@ def init_input_boards():
         return count
 
     # Parse input boards from list of strings to lists of list of characters:
-    board_terrain = parse_input(format_input(board_terrain_input))
-    board_positions = parse_input(format_input(board_positions_input))
+    board_terrain = parse_input(format_input(input_board_terrain))
+    board_positions = parse_input(format_input(input_board_positions))
 
     for r in board_terrain:
         print(r)
@@ -136,9 +136,9 @@ def init_input_boards():
     print("")
 
     # Count specific number of obstacles:
-    num_lava_obstacles = count_obstacles(board_terrain, [lava_code])
-    num_water_obstacles = count_obstacles(board_terrain, [water_code])
-    num_rubble_obstacles = count_obstacles(board_terrain, [rubble_code])
+    num_lava_obstacles = count_obstacles(board_terrain, [code_lava])
+    num_water_obstacles = count_obstacles(board_terrain, [code_water])
+    num_rubble_obstacles = count_obstacles(board_terrain, [code_rubble])
     num_flying_obstacles = num_lava_obstacles + num_water_obstacles + num_rubble_obstacles
 
 # =================================================================================================
@@ -147,16 +147,16 @@ def init_input_boards():
 def init_needed_maps() -> list[int]:
     global need_basic_map, need_lava_map, need_water_map, need_rubble_map, need_flying_map
 
-    for hero in hero_inputs:
-        if hero.terrain_id == basic_terrain:
+    for hero in input_heroes:
+        if hero.terrain_id == map_type_basic:
             need_basic_map = True
-        if hero.terrain_id == lava_walker and hero.pivot and num_lava_obstacles > 0:
+        if hero.terrain_id == map_type_lava and hero.pivot and num_lava_obstacles > 0:
             need_lava_map = True
-        if hero.terrain_id == water_walker and hero.pivot and num_water_obstacles > 0:
+        if hero.terrain_id == map_type_water and hero.pivot and num_water_obstacles > 0:
             need_water_map = True
-        if hero.terrain_id == rubble_walker and hero.pivot and num_rubble_obstacles > 0:
+        if hero.terrain_id == map_type_rubble and hero.pivot and num_rubble_obstacles > 0:
             need_rubble_map = True
-        if hero.terrain_id == flying_hero and hero.pivot and num_flying_obstacles > 0:
+        if hero.terrain_id == map_type_flying and hero.pivot and num_flying_obstacles > 0:
             need_flying_map = True
 
 # =================================================================================================
@@ -166,37 +166,37 @@ def init_maps():
 
     # Init the different types of maps. Only need to init if they are going to be used.
     # Init basic map
-    obstacles_basic_codes = [obstacle_code, lava_code, water_code, rubble_code]
+    obstacles_basic_codes = [code_obstacle, code_lava, code_water, code_rubble]
     board_obstacles_basic = get_obstacle_board(board_terrain, board_positions, obstacles_basic_codes)
-    map_basic: Map = Map(basic_terrain, "Basic", board_obstacles_basic)
+    map_basic: Map = Map(map_type_basic, "Basic", board_obstacles_basic)
 
     # Init lava map
     map_lava = None
     if need_lava_map:
-        obstacles_lava_codes = [obstacle_code, water_code, rubble_code]
+        obstacles_lava_codes = [code_obstacle, code_water, code_rubble]
         board_obstacles_lava = get_obstacle_board(board_terrain, board_positions, obstacles_lava_codes)
-        map_lava: Map = Map(lava_walker, "Lava", board_obstacles_lava)
+        map_lava: Map = Map(map_type_lava, "Lava", board_obstacles_lava)
 
     # Init water map
     map_water = None
     if need_water_map:
-        obstacles_water_codes = [obstacle_code, lava_code, rubble_code]
+        obstacles_water_codes = [code_obstacle, code_lava, code_rubble]
         board_obstacles_water = get_obstacle_board(board_terrain, board_positions, obstacles_water_codes)
-        map_water: Map = Map(water_walker, "Water", board_obstacles_water)
+        map_water: Map = Map(map_type_water, "Water", board_obstacles_water)
 
     # Init rubble map
     map_rubble = None
     if need_rubble_map:
-        obstacles_rubble_codes = [obstacle_code, lava_code, water_code]
+        obstacles_rubble_codes = [code_obstacle, code_lava, code_water]
         board_obstacles_rubble = get_obstacle_board(board_terrain, board_positions, obstacles_rubble_codes)
-        map_rubble: Map = Map(rubble_walker, "Rubble", board_obstacles_rubble)
+        map_rubble: Map = Map(map_type_rubble, "Rubble", board_obstacles_rubble)
 
     # Init flying map
     map_flying = None
     if need_flying_map:
-        obstacles_flying_codes = [obstacle_code]
+        obstacles_flying_codes = [code_obstacle]
         board_obstacles_flying = get_obstacle_board(board_terrain, board_positions, obstacles_flying_codes)
-        map_flying: Map = Map(flying_hero, "Flying", board_obstacles_flying)
+        map_flying: Map = Map(map_type_flying, "Flying", board_obstacles_flying)
 
     maps = [map_basic, map_lava, map_water, map_rubble, map_flying]
 
@@ -207,28 +207,28 @@ def init_heroes():
     # heroes: list[Hero] = []
     id = 0
     
-    for hero in hero_inputs:
+    for hero in input_heroes:
         new_hero = get_hero(hero)
         new_hero.id = id
-        new_hero.starting_point = new_hero.get_hero_pos(board_positions_input)
+        new_hero.starting_point = new_hero.get_hero_pos(input_board_positions)
         # Only need to set hero section and pivot points if he can be a pivot:
         if new_hero.pivot:
             # Assume the hero's map is basic:
-            new_hero.section = maps[basic_terrain].get_section_of_point(new_hero.starting_point)
-            new_hero.pivot_points = maps[basic_terrain]. get_points_in_section(new_hero.section)
+            new_hero.section = maps[map_type_basic].get_section_of_point(new_hero.starting_point)
+            new_hero.pivot_points = maps[map_type_basic]. get_points_in_section(new_hero.section)
             # If the hero is a special walker and that obstacle is present in the terrain, then set:
-            if new_hero.terrain_id == lava_walker and num_lava_obstacles > 0:
+            if new_hero.terrain_id == map_type_lava and num_lava_obstacles > 0:
                 new_hero.section = maps[new_hero.terrain_id].get_section_of_point(new_hero.starting_point)
-                new_hero.pivot_points = maps[lava_walker]. get_points_in_section(new_hero.section)
-            elif new_hero.terrain_id == water_walker and num_water_obstacles > 0:
+                new_hero.pivot_points = maps[map_type_lava]. get_points_in_section(new_hero.section)
+            elif new_hero.terrain_id == map_type_water and num_water_obstacles > 0:
                 new_hero.section = maps[new_hero.terrain_id].get_section_of_point(new_hero.starting_point)
-                new_hero.pivot_points = maps[water_walker]. get_points_in_section(new_hero.section)
-            elif new_hero.terrain_id == rubble_walker and num_rubble_obstacles > 0:
+                new_hero.pivot_points = maps[map_type_water]. get_points_in_section(new_hero.section)
+            elif new_hero.terrain_id == map_type_rubble and num_rubble_obstacles > 0:
                 new_hero.section = maps[new_hero.terrain_id].get_section_of_point(new_hero.starting_point)
-                new_hero.pivot_points = maps[rubble_walker]. get_points_in_section(new_hero.section)
-            elif new_hero.terrain_id == flying_hero and num_flying_obstacles > 0:
+                new_hero.pivot_points = maps[map_type_rubble]. get_points_in_section(new_hero.section)
+            elif new_hero.terrain_id == map_type_flying and num_flying_obstacles > 0:
                 new_hero.section = maps[new_hero.terrain_id].get_section_of_point(new_hero.starting_point)
-                new_hero.pivot_points = maps[flying_hero]. get_points_in_section(new_hero.section)
+                new_hero.pivot_points = maps[map_type_flying]. get_points_in_section(new_hero.section)
         heroes.append(new_hero)
         id = id + 1
 
@@ -295,20 +295,20 @@ def get_obstacle_board(board_terrain: list[list[chr]], board_pos: list[list[chr]
     # board: Board = Board()
 
     # Create an empty board for the final output
-    final_board = [[empty_square_code for _ in range(cols)] for _ in range(rows)]
+    final_board = [[code_empty for _ in range(cols)] for _ in range(rows)]
     
     # Iterate through each position in the boards
     for i in range(rows):
         for j in range(cols):
             # Check if the terrain board has an obstacle
             if board_terrain[i][j] in obstacles:
-                final_board[i][j] = obstacle_code
+                final_board[i][j] = code_obstacle
             # Check if the position board has a monster character
             elif board_pos[i][j] in monster_codes:
-                final_board[i][j] = obstacle_code
+                final_board[i][j] = code_obstacle
             # Otherwise, keep the square empty
             else:
-                final_board[i][j] = empty_square_code
+                final_board[i][j] = code_empty
     
     return final_board
 
@@ -329,8 +329,33 @@ def init_points():
     points_flying_lava = None
     points_flying_water = None
     points_flying_rubble = None
-    
-    points = []
+
+    if need_basic_map:
+        points_basic = Allowable(map_match_basic, hero_map=maps[map_type_basic])
+    if need_lava_map:
+        points_lava = Allowable(map_match_lava, hero_map=maps[map_type_lava])
+        if need_basic_map:
+            points_lava_basic = Allowable(map_match_lava_basic, maps[map_type_lava], maps[map_type_basic])
+    if need_water_map:
+        points_water = Allowable(map_match_water, hero_map=maps[map_type_water])
+        if need_basic_map:
+            points_water_basic = Allowable(map_match_water_basic, maps[map_type_water], maps[map_type_basic])
+    if need_rubble_map:
+        points_rubble = Allowable(map_match_rubble, hero_map=maps[map_type_rubble])
+        if need_basic_map:
+            points_rubble_basic = Allowable(map_match_rubble_basic, maps[map_type_rubble], maps[map_type_basic])
+    if need_flying_map:
+        points_flying = Allowable(map_match_flying, maps[map_type_flying])
+        if need_basic_map:
+            points_flying_basic = Allowable(map_match_flying_basic, maps[map_type_flying], maps[map_type_basic])
+        if need_lava_map:
+            points_flying_lava = Allowable(map_match_flying_lava, maps[map_type_flying], maps[map_type_lava])
+        if need_water_map:
+            points_flying_water = Allowable(map_match_flying_water, maps[map_type_flying], maps[map_type_water])
+        if need_rubble_map:
+            points_flying_rubble = Allowable(map_match_flying_rubble, maps[map_type_flying], maps[map_type_rubble])
+
+    points = [points_basic, points_lava, points_water, points_rubble, points_flying, points_lava_basic, points_water_basic, points_rubble_basic, points_flying_lava, points_flying_water, points_flying_rubble]
 
 # =================================================================================================
 # VALIDATION METHODS
@@ -487,9 +512,9 @@ hero_pos: list[tuple] = []
 for h in heroes:
     hero_pos.append(h.starting_point)
 
-maps[basic_terrain].print_map_with_zones()
-maps[basic_terrain].print_map_with_terrains(board_terrain)
-maps[basic_terrain].print_map_with_positions(hero_pos)
+maps[map_type_basic].print_map_with_zones()
+maps[map_type_basic].print_map_with_terrains(board_terrain)
+maps[map_type_basic].print_map_with_positions(hero_pos)
 
 
 

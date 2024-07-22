@@ -7,8 +7,6 @@ class Map:
     lava_code = Board_Codes.lava_code.value
     water_code = Board_Codes.water_code.value
     rubble_code = Board_Codes.rubble_code.value
-    basic_map_id = Terrain_Codes.basic_terrain.value
-    flying_map_id = Terrain_Codes.flying_hero.value
     
     def __init__(self, id=0, name="", board=None):
         self.id = 0
@@ -781,6 +779,9 @@ class Map:
             if self.paths[i][0] == start_zone and self.paths[i][len(self.paths[i])-1] == end_zone:
                 return i
         return None  # Return None if no such path is found
+
+# =================================================================================================
+# 
 
 # endregion
 

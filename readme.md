@@ -161,9 +161,27 @@ To determine the allowable points of the heros:
 
 A pivot hero can move anywhere in his section in all cases
 
-A hero can move to certain points depending on the case:
+A hero can move to certain points depending on the case. The following are the different cases and the allowable points for the hero based on the conditions:
 
-### Same Map Move Cases
+Path: The path of the pivot from his starting zone to the ending zone (from the pivot's map/perspective)
+
+Start Zone: The starting zone of the hero (From the pivot's map/perspective. This means the hero's zone id converts to the zone id in the pivot map)
+
+Prev Zone: The zone on the path (main or alt) that appears just before the start zone
+
+DE: This is a deadend. In the case where the pivot map and the hero map differ, a deadend is only such if it is a deadend on the pivot map (also called a PDE).
+
+nDE: A non-deadend (from the pivot's map/perspective)
+
+Allowed Start Zone: If yes the hero can travel anywhere in his starting zone
+
+Allowed Prev Zone: If yes the hero can travel to the previous zone on the path (main or alt)
+
+Allowed Connected DE: The hero can travel to any connected DE to the previous zone (if allowed there) or to the nDE zone he is in. There will be exceptions as listed.
+
+NOTE: In the case where the maps differ, if the hero is allowed to a zone, that zone will expand to match the pivot's. For example, the hero's start zone is 6 and that zone is zone 2 in the pivot's map. The pivot zone 2 corresponds to hero zones 4, 5, and 6. In this case, the hero can move to 4, 5, or 6. This case is where the pivot can move the hero to connecting zones because he can traverse obstacles the hero cannot in order to move him there.
+
+### Map Move Cases
 
 | <br>ID | <br>Path | Start Zone<br>DE/nDE | Prev Zone<br>DE/nDE | Prev Zone<br>on main? | Allowed<br>Start zone? | Allowed<br> prev zone? | Allowed<br>connected DE? |
 |---|---|---|---|---|---|---|---|
@@ -176,11 +194,11 @@ A hero can move to certain points depending on the case:
 | 07 | Alt | DE | nDE | No | Yes | Yes | Except upstream alt path |
 | 08 | Alt | nDE | - | - | Yes | - | Except upstream alt path |
 
-### Same Map Move Case Explinations
+### Map Move Case Explanations
 
 | ID | Setup | Allowable Points |
 |---|---|---|
-| 01 | Hero is in a different section than the pivot | Cannot move |
+| 01 | Hero's starting point is not in the pivot's section | Cannot move |
 | 02 | Hero is on a DE on the main path and the prior zone is a DE | He can only go to the previous zone |
 | 03 | Hero is on a DE on the main path and the prior zone is not a DE | Previous zone and its connected DEs (except Hero start zone) |
 | 04 | Hero is not on a DE and on the main path | Start zone and any connected DEs (except those downstream on main path) |
@@ -189,7 +207,6 @@ A hero can move to certain points depending on the case:
 | 07 | Hero is on a DE not on the main path. Previous zone is not a DE and not on the main path.| Start zone and previous zone and its connected DEs (except upsream on alt path) |
 | 08 | Hero is not on a DE and not on the main path. | Start zone and connected DEs (except upstream on alt path) |
 
-<br>
 
 Case "Same": Pivot Map and Hero Map is the same:
     Case S1: Hero starts in a zone on the main path:
