@@ -503,14 +503,22 @@ init_input_boards()
 init_needed_maps()
 init_maps()
 init_heroes()
+
+hero_pos: list[tuple] = []
+for h in heroes:
+    hero_pos.append(h.starting_point)
+
+maps[map_type_basic].print_map_with_zones()
+maps[map_type_lava].print_map_with_zones()
+# maps[map_type_basic].print_map_with_terrains(board_terrain)
+# maps[map_type_basic].print_map_with_positions(hero_pos)
+
+
 init_points()
 
 # -------------------------------------------------------------------------------------------------
 # main_list = map_basic.get_all_allowable_points_same()
 
-hero_pos: list[tuple] = []
-for h in heroes:
-    hero_pos.append(h.starting_point)
 
 maps[map_type_basic].print_map_with_zones()
 maps[map_type_basic].print_map_with_terrains(board_terrain)
