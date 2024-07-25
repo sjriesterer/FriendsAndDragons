@@ -413,76 +413,59 @@ def loop(board, positions, zones, heroes):
 # =================================================================================================
 # PRINT METHODS
 # =================================================================================================
-def output_to_debug_log(map_: Map):
+#
+def output_to_debug_log(allowable: Allowable):
     # Open the file for writing
-    debug_file = open("logs/debug_log.txt", "w")
-
-    # Iterate through each element in the 4D list and write to the file
-    for s in range(len(map_.points_same)):
-        for p in range(len(map_.points_same[s])):
-            path_id = map_.points_same[s][p][0].main_path_id
-            if path_id < 26:
-                path_char = chr(65 + path_id - 3)  # A = 0, B = 1, ..., Z = 25
-            else:
-                first_char = chr(65 + (path_id - 26 - 3) // 26)  # A-Z
-                second_char = chr(65 + (path_id - 26 - 3) % 26)  # A-Z
-                path_char = f"{first_char}{second_char}"  # AA, AB, ...
-            
-            debug_file.write(f"\n******************************\nSection {s} - Path {path_char} : {path_id} = {map_.paths[path_id]}\n******************************\n")
-            for z in range(len(map_.points_same[s][p])):
-                zone_id = map_.points_same[s][p][z].zone_id
-                debug_file.write(f"Zone {zone_id}: {map_.points_same[s][p][z].points}\n")
-
-    # Close the file
-    debug_file.close()
-
-# =================================================================================================
-def output_to_debug_log2(map_: Map):
-    # Open the file for writing
-    debug_file = open("logs/debug_log2.txt", "w")
+    debug_file = open("logs/debug_log3.txt", "w")
 
     # Iterate through each element in the 3D list and write to the file
-    for i in range(len(map_.zones)):
-        for j in range(len(map_.zones)):
+    for i in range(len(allowable.points)):
+        for j in range(len(allowable.points[0])):
             debug_file.write(f"\n****************\nPivot path: {i} to {j}\n****************\n")
-            for k in range(len(map_.zones)):
-                debug_file.write(f"{k:02} : {map_.points[i][j][k]}\n")
+            for k in range(len(allowable.points[0][0])):
+                debug_file.write(f"{k:02} : {allowable.points[i][j][k]}\n")
 
     # Close the file
     debug_file.close()
 
 # =================================================================================================
-def output_debug_log_excel(map_: Map):
+# For printing out all points in a format that can be imported into Excel for comparison
+def output_debug_log_excel_basic(map_: 'Map', allowable: Allowable):
     # Open the debug file for writing
-    with open("logs/debug_log2.txt", "w") as debug_file:
+    with open("logs/debug_log_excel.txt", "w") as debug_file:
 
         debug_file.write(f"\t")
 
         # Print paths as first row
-        for p in map_.paths:
-            path_str = ", ".join(map(str, p))
-            debug_file.write(f"{path_str} \t ")
-        debug_file.write(f"\n")
+        for s in range(len(allowable.points)):
+            for e in range(len(allowable.points[0])):
+                path_str = f"{s} to {e}"
+                debug_file.write(f"{path_str} \t ")
 
-        # Loop through the sections
-        for s in range(len(map_.points_same)):
-            # Get the number of zones in the current section
-            num_zones = len(map_.points_same[s][0])
-            
-            # Loop through each zone in the section
-            for z in range(num_zones):
-                zone_output = f"{z}\t"
-                # Loop through each path in the section
-                for p in range(len(map_.points_same[s])):
-                    path_points = map_.points_same[s][p][z].points
-                    # Convert list of points to a string and remove brackets
-                    points_str = str(path_points).replace("[", "").replace("]", "")
-                    zone_output += f"{points_str} \t"
-                
-                # Remove the trailing tab and space
-                zone_output = zone_output.rstrip('\t ')
-                # Write the formatted output to the debug file
-                debug_file.write(f"{zone_output}\n")
+        debug_file.write(f"\n")
+        
+        num_zones = len(allowable.points[0][0])
+        num_pivot_zones = len(allowable.points)
+        for h in range(num_zones):
+            zone_output = f"{h}\t"
+            for s in range(num_pivot_zones):
+                for e in range(num_pivot_zones):
+                    if allowable.points[s][e][h] is None:
+                        path_points = []
+                        points_str = str(path_points).replace("[", "").replace("]", "")
+                        zone_output += f"{points_str} "
+                    else:
+                        for p in range(len(allowable.points[s][e][h])):
+                            path_points = allowable.points[s][e][h]
+                            points_str = str(path_points).replace("[", "").replace("]", "")
+                            zone_output += f"{points_str}, "
+
+                    # Remove the trailing tab and space
+                    zone_output = zone_output.rstrip(', ')
+                    zone_output += '\t'
+
+            # Write the formatted output to the debug file
+            debug_file.write(f"{zone_output}\n")
 
 # =================================================================================================
 # SCRIPT
@@ -520,13 +503,14 @@ init_points()
 # main_list = map_basic.get_all_allowable_points_same()
 
 
-maps[map_type_basic].print_map_with_zones()
-maps[map_type_basic].print_map_with_terrains(board_terrain)
-maps[map_type_basic].print_map_with_positions(hero_pos)
+# maps[map_type_basic].print_map_with_zones()
+# maps[map_type_basic].print_map_with_terrains(board_terrain)
+# maps[map_type_basic].print_map_with_positions(hero_pos)
 
-
+output_to_debug_log(points[map_match_lava_basic])
 
 # output_to_debug_log(map_basic)
-# output_debug_log_excel(map_basic)
+output_debug_log_excel_basic(maps[map_match_basic], points[map_match_lava_basic])
 # output_to_debug_log2(map_basic)
 
+# output_debug_log_excel_basic2(points[map_match_basic].points)

@@ -85,33 +85,7 @@ class Allowable:
         return allowable_points
 
 # =================================================================================================
-# This assumes the hero is on a basic map and the pivot is not
-    def get_allowable_points_mismatch_old(self, pivot_terrain_code: int, pivot_map: 'Map') -> list[list[list[tuple]]]:
-        num_zones = len(self.zones)
-        allowable_points = [[[None for _ in range(num_zones)] for _ in range(num_zones)] for _ in range(num_zones)]
-
-        # s represents Pivot Start Zone
-        # e represents Pivot End Zone
-        # h represents Hero Zone
-        for s in range(len(self.zones)):
-            for e in range(len(self.zones)):
-                main_path_id = self.get_path_id(s, e)
-                if main_path_id is None:
-                    continue
-                main_path = self.paths[main_path_id]
-                for h in range(len(self.zones)):
-                    if h in main_path:
-                        points = self.get_allowable_points_main_path(self.zones, main_path, h)
-                    else:
-                        alt_path_id = self.get_path_id(s, h)
-                        if alt_path_id is None:
-                            continue
-                        alt_path = self.paths[alt_path_id]
-                        points = self.get_allowable_points_alt_path(self.zones, main_path, alt_path, h)
-                    allowable_points[s][e][h] = points
-        return allowable_points
-
-# =================================================================================================
+#
     def get_all_points_of_map_diff(self, pivot_map: 'Map', hero_map: 'Map') -> list[list[list[tuple]]]:
         num_zones_pivot_map = len(pivot_map.zones)
         num_zones_hero_map = len(hero_map.zones)
