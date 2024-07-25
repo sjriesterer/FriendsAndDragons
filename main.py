@@ -416,7 +416,7 @@ def loop(board, positions, zones, heroes):
 #
 def output_to_debug_log(allowable: Allowable):
     # Open the file for writing
-    debug_file = open("logs/debug_log3.txt", "w")
+    debug_file = open("logs/debug_log.txt", "w")
 
     # Iterate through each element in the 3D list and write to the file
     for i in range(len(allowable.points)):
@@ -430,7 +430,7 @@ def output_to_debug_log(allowable: Allowable):
 
 # =================================================================================================
 # For printing out all points in a format that can be imported into Excel for comparison
-def output_debug_log_excel_basic(map_: 'Map', allowable: Allowable):
+def output_debug_log_excel_basic(allowable: Allowable):
     # Open the debug file for writing
     with open("logs/debug_log_excel.txt", "w") as debug_file:
 
@@ -510,7 +510,7 @@ init_points()
 output_to_debug_log(points[map_match_lava_basic])
 
 # output_to_debug_log(map_basic)
-output_debug_log_excel_basic(maps[map_match_basic], points[map_match_lava_basic])
+output_debug_log_excel_basic(points[map_match_lava_basic])
 # output_to_debug_log2(map_basic)
 
 # output_debug_log_excel_basic2(points[map_match_basic].points)
