@@ -21,32 +21,32 @@ class Allowable:
         self.id = id
         self.pivot_map = pivot_map
         self.hero_map = hero_map
-        self.points = self.get_points()
+        self.points: list[list[list[list[tuple]]]]= self.get_points()
 
 # =================================================================================================
 # POINTS
 # =================================================================================================
 # region POINTS
 
-    def get_points(self):
+    def get_points(self) -> list[list[list[list[tuple]]]]:
         points = None
 
         if self.id == self.map_match_basic or self.id == self.map_match_lava or self.id == self.map_match_water or self.id == self.map_match_rubble or self.id == self.map_match_flying:
             points = self.get_all_points_of_map_same(self.hero_map)
-        elif self.id == self.map_match_lava_basic:
+        else:
             points = self.get_all_points_of_map_diff(self.pivot_map, self.hero_map)
-        elif self.id == self.map_match_water_basic:
-            pass
-        elif self.id == self.map_match_rubble_basic:
-            pass
-        elif self.id == self.map_match_flying_basic:
-            pass
-        elif self.id == self.map_match_flying_lava:
-            pass
-        elif self.id == self.map_match_flying_water:
-            pass
-        elif self.id == self.map_match_flying_rubble:
-            pass
+        # elif self.id == self.map_match_water_basic:
+        #     pass
+        # elif self.id == self.map_match_rubble_basic:
+        #     pass
+        # elif self.id == self.map_match_flying_basic:
+        #     pass
+        # elif self.id == self.map_match_flying_lava:
+        #     pass
+        # elif self.id == self.map_match_flying_water:
+        #     pass
+        # elif self.id == self.map_match_flying_rubble:
+        #     pass
         
         return points
 
@@ -59,7 +59,7 @@ class Allowable:
 #       start_zone_of_pivot > end_zone_of_pivot > hero_zone
 # For example, if the pivot is moving from zone 2 to 9 and the movable hero is in zone 10,
 # you can get the hero's allowable points by: list[2][9][10]
-    def get_all_points_of_map_same(self, map: 'Map') -> list[list[list[tuple]]]:
+    def get_all_points_of_map_same(self, map: 'Map') -> list[list[list[list[tuple]]]]:
         num_zones = len(map.zones)
         allowable_points = [[[None for _ in range(num_zones)] for _ in range(num_zones)] for _ in range(num_zones)]
 
@@ -86,7 +86,7 @@ class Allowable:
 
 # =================================================================================================
 #
-    def get_all_points_of_map_diff(self, pivot_map: 'Map', hero_map: 'Map') -> list[list[list[tuple]]]:
+    def get_all_points_of_map_diff(self, pivot_map: 'Map', hero_map: 'Map') -> list[list[list[list[tuple]]]]:
         num_zones_pivot_map = len(pivot_map.zones)
         num_zones_hero_map = len(hero_map.zones)
         allowable_points = [[[None for _ in range(num_zones_hero_map)] for _ in range(num_zones_pivot_map)] for _ in range(num_zones_pivot_map)]
@@ -310,14 +310,6 @@ class Allowable:
 
 # =================================================================================================
 #
-    def get_points_in_zone2(self, zone: int, zones: list[Zone]) -> list[int] | None:
-        for z in zones:
-            if z.id == zone:
-                return z.points
-        return None
-
-# =================================================================================================
-#
     def get_points_in_section(self, zones: list[int], section: int) -> list[tuple]:
         points: list[tuple] = []
         for z in zones:
@@ -327,15 +319,5 @@ class Allowable:
         points = sorted(points, key=lambda p: (p[0], p[1]))
         return points
 
-# =================================================================================================
-#
-    def is_point_in_section(self, section: int, point: tuple) -> bool:
-        for z in self.zones:
-            if point in z:
-                if section == z.section:
-                    return True
-                else:
-                    return False
-        return False
 
 #endregion

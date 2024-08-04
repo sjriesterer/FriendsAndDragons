@@ -17,15 +17,6 @@ class Map:
         self.zones = self.get_zones_of_map()
         self.sections = self.get_sections_in_zones()
         self.paths = self.get_all_paths()
-        # self.points = self.get_all_points_of_map()
-        # Don't need these points unless the inputs call for them
-        # self.points_lava_basic = []
-        # self.points_water_basic = []
-        # self.points_rubble_basic = []
-        # self.points_flying_basic = []
-        # self.points_flying_lava = []
-        # self.points_flying_water = []
-        # self.points_flying_rubble = []
 
     def __str__(self):
         return (f'ID: {self.id}, Name: {self.name}, '
@@ -513,7 +504,7 @@ class Map:
 
 # =================================================================================================
 # Returns the previous deadend zone prior to the zone_id on the path of zones given
-    def get_previous_deadend_zone_id(self, zone_id, path: list[Zone]) -> int | None:
+    def get_previous_deadend_zone_id(self, zone_id, path: list[int]) -> int | None:
         if zone_id in path:
             index_of_zone = path.index(zone_id)
             if index_of_zone <= 0:
@@ -788,7 +779,8 @@ class Map:
 # =================================================================================================
 # SECTIONS & POINTS
 # =================================================================================================
-# region SECTIONS & POINTS
+# region SECTIONS AND POINTS
+
 # Gets all the sections of the board
     def get_sections_in_zones(self) -> list[int]:
         sections = []
@@ -829,7 +821,5 @@ class Map:
     def remove_duplicates(self, list):
         return [t for t in (set(tuple(i) for i in list))]
 
-# =================================================================================================
-#
-       
 # endregion
+

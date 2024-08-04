@@ -24,7 +24,7 @@ class Hero:
         return f'ID: {self.id}, Name: {self.name}, Cls: {self.cls}, Board ID: {self.terrain_id}, Start Pos: {self.starting_point}, section: {self.section}'
     
     # Returns the point of the hero id on the board
-    def get_hero_pos(self, board: list[list[str]]):
+    def get_hero_pos(self, board: list[str]):
         id_str = str(self.id)
         for row_index, row in enumerate(board):
             for col_index, cell in enumerate(row):

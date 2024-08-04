@@ -98,13 +98,13 @@ map_matches = [map_match_basic, map_match_lava, map_match_water, map_match_rubbl
 # INIT METHODS
 # =================================================================================================
 # Use a list comprehension to convert each string into a list of characters
-def parse_input(input):
+def parse_input(input: list[str]):
     board = [list(row) for row in input]
     return board
 
 # =================================================================================================
 # Remove spaces and convert to uppercase
-def format_input(input):
+def format_input(input: list[str]):
     new_input = []
     for item in input:
         new_input.append(item.upper().replace(' ', ''))
@@ -345,7 +345,7 @@ def init_points():
         if need_basic_map:
             points_rubble_basic = Allowable(map_match_rubble_basic, maps[map_type_rubble], maps[map_type_basic])
     if need_flying_map:
-        points_flying = Allowable(map_match_flying, maps[map_type_flying])
+        points_flying = Allowable(map_match_flying, hero_map=maps[map_type_flying])
         if need_basic_map:
             points_flying_basic = Allowable(map_match_flying_basic, maps[map_type_flying], maps[map_type_basic])
         if need_lava_map:
@@ -355,7 +355,7 @@ def init_points():
         if need_rubble_map:
             points_flying_rubble = Allowable(map_match_flying_rubble, maps[map_type_flying], maps[map_type_rubble])
 
-    points = [points_basic, points_lava, points_water, points_rubble, points_flying, points_lava_basic, points_water_basic, points_rubble_basic, points_flying_lava, points_flying_water, points_flying_rubble]
+    points = [points_basic, points_lava, points_water, points_rubble, points_flying, points_lava_basic, points_water_basic, points_rubble_basic, points_flying_basic, points_flying_lava, points_flying_water, points_flying_rubble]
 
 # =================================================================================================
 # VALIDATION METHODS
@@ -414,9 +414,10 @@ def loop(board, positions, zones, heroes):
 # PRINT METHODS
 # =================================================================================================
 #
-def output_to_debug_log(allowable: Allowable):
+def output_to_debug_log(file: str, allowable: Allowable):
     # Open the file for writing
-    debug_file = open("logs/debug_log.txt", "w")
+    filename = f"logs/{file}.txt"
+    debug_file = open(filename, "w")
 
     # Iterate through each element in the 3D list and write to the file
     for i in range(len(allowable.points)):
@@ -428,11 +429,37 @@ def output_to_debug_log(allowable: Allowable):
     # Close the file
     debug_file.close()
 
+def output_to_debug_log_new(file: str, allowable: Allowable):
+    # Open the file for writing
+    filename = f"logs/{file}.txt"
+    debug_file = open(filename, "w")
+
+    # Iterate through each element in the 3D list and write to the file
+    for i in range(len(allowable.points)):
+        for j in range(len(allowable.points[i])):
+            if allowable.points[i][j] is not None and len(allowable.points[i][j]) > 0:
+                debug_file.write(f"\n************************\nPivot {i} to {j}\n************************\n")
+                for k in range(len(allowable.points[i][j])):
+                    debug_file.write(f"\n{k:02} : ")
+                    if allowable.points[i][j][k] is None:
+                        debug_file.write("None")
+                    else:
+                        for l in range(len(allowable.points[i][j][k])):
+                            debug_file.write(f"{allowable.points[i][j][k][l]}")
+                            if l < len(allowable.points[i][j][k]) - 1:
+                                debug_file.write(", ")
+                debug_file.write(f"\n")
+
+    # Close the file
+    debug_file.close()
+
 # =================================================================================================
 # For printing out all points in a format that can be imported into Excel for comparison
-def output_debug_log_excel_basic(allowable: Allowable):
+def output_debug_log_excel_basic(file: str, allowable: Allowable):
+    filename = f"logs/{file}.txt"
+
     # Open the debug file for writing
-    with open("logs/debug_log_excel.txt", "w") as debug_file:
+    with open(filename, "w") as debug_file:
 
         debug_file.write(f"\t")
 
@@ -493,24 +520,21 @@ for h in heroes:
 
 maps[map_type_basic].print_map_with_zones()
 maps[map_type_lava].print_map_with_zones()
+maps[map_type_water].print_map_with_zones()
+maps[map_type_rubble].print_map_with_zones()
+maps[map_type_flying].print_map_with_zones()
+
 # maps[map_type_basic].print_map_with_terrains(board_terrain)
 # maps[map_type_basic].print_map_with_positions(hero_pos)
-
 
 init_points()
 
-# -------------------------------------------------------------------------------------------------
-# main_list = map_basic.get_all_allowable_points_same()
-
-
-# maps[map_type_basic].print_map_with_zones()
-# maps[map_type_basic].print_map_with_terrains(board_terrain)
-# maps[map_type_basic].print_map_with_positions(hero_pos)
-
-output_to_debug_log(points[map_match_lava_basic])
-
-# output_to_debug_log(map_basic)
-output_debug_log_excel_basic(points[map_match_lava_basic])
-# output_to_debug_log2(map_basic)
-
-# output_debug_log_excel_basic2(points[map_match_basic].points)
+output_to_debug_log_new("basic", points[map_match_basic])
+output_to_debug_log("lava_basic", points[map_match_lava_basic])
+output_to_debug_log("water_basic", points[map_match_water_basic])
+output_to_debug_log("rubble_basic", points[map_match_rubble_basic])
+output_to_debug_log("flying_basic", points[map_match_flying_basic])
+output_to_debug_log("flying_lava", points[map_match_flying_lava])
+output_to_debug_log("flying_water", points[map_match_flying_water])
+output_to_debug_log("flying_rubble", points[map_match_flying_rubble])
+output_debug_log_excel_basic("lava_basic_excel", points[map_match_lava_basic])

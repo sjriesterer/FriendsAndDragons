@@ -45,12 +45,12 @@ class Inputs():
     terrain = [
         "..ooo.....",
         ".o........",
-        "o...ooooo.",
+        "o...wwwww.",
         "o.ooo...l.",
         "o.oo....o.",
         "ollooo....",
         "...o......",
-        ".oo..l.ooo",
+        ".oo..l.rrr",
         "...oo.....",
         "....o.....",
     ]
@@ -112,7 +112,7 @@ class Inputs():
         Hero(cls="mage", name= "Elethas2", mighty_blow=1),
         Hero(cls="healer", terrain_id=lava_map_id),
         Hero(cls="rogue",  name="Gloom", pivot=True, terrain_id=rubble_map_id, rubble=1, tumble=2),
-        Hero(cls="healer", terrain_id=lava_map_id),
-        Hero(cls="healer", terrain_id=lava_map_id),
-        Hero(cls="healer", terrain_id=lava_map_id),
+        Hero(cls="healer", pivot=True, terrain_id=lava_map_id),
+        Hero(cls="healer", pivot=True, terrain_id=water_map_id),
+        Hero(cls="healer", pivot=True, terrain_id=flying_map_id),
     ]
