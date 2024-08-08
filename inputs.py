@@ -80,8 +80,8 @@ class Inputs():
         "0..1..",
         "2..3..",
         "4.....",
-        "......",
-        "......",
+        "....a.",
+        "....b.",
     ]
     heroes = [
         Hero(cls="monk",   name="Blaise", pivot=True, terrain_id=lava_map_id, push = 3, mighty_blow=2),

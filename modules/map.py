@@ -1,4 +1,5 @@
 from enums import Board_Codes, Terrain_Codes
+from modules.board import Board
 from modules.zone import Zone
 
 class Map:
@@ -8,10 +9,10 @@ class Map:
     water_code = Board_Codes.water_code.value
     rubble_code = Board_Codes.rubble_code.value
     
-    def __init__(self, id=0, name="", board=None):
+    def __init__(self, id=0, name="", board: Board=None):
         self.id = 0
         self.name = name
-        self.board = board if board is not None else []
+        self.board = board
         self.chokepoints = self.find_chokepoints()
         self.deadends = self.find_deadends()
         self.zones = self.get_zones_of_map()
@@ -30,21 +31,6 @@ class Map:
 # =================================================================================================
 # PRINT
 # =================================================================================================
-# region PRINT
-    def print_board(self):
-        # Print column numbers
-        print('    ', end='')
-        for col in range(len(self.board[0])):
-            print(f'{col:2}', end='')
-        print()
-        print(" ---------------------------------")
-
-        # Print board rows with row numbers
-        for i, row in enumerate(self.board):
-            print(f'{i:2} | ', end='')
-            print(' '.join(row))
-
-# =================================================================================================
     def print_map_with_zones(self):
         print("Zone Map: ", self.name)
 
@@ -53,23 +39,23 @@ class Map:
 
         # Print column numbers
         print('    ', end='')
-        for col in range(len(self.board[0])):
+        for col in range(len(self.board.board[0])):
             if col == 10:
                 print(" ", end= "")
             print(f'{col:2}', end=' ')
         print()
 
         print("------", end = "")
-        for i in range(len(self.board[0])):
+        for i in range(len(self.board.board[0])):
             print("---", end = "")
         print("\n", end = "")
 
         # Loop through the rows
-        for i in range(len(self.board)):
+        for i in range(len(self.board.board)):
             print(f'{i:2} | ', end='')
 
             # Loop through the columns
-            for j in range(len(self.board[i])):
+            for j in range(len(self.board.board[i])):
                 found = False
                 # Check each zone
                 for zone in self.zones:
@@ -84,7 +70,7 @@ class Map:
                 # If no zone contains the current position, check for obstacle
                 if not found:
                 # else:
-                    if self.board[i][j] == self.obstacle_code:
+                    if self.board.board[i][j] == self.obstacle_code:
                         print('[]', end=' ')
                     else:
                         print('..', end=' ')
@@ -92,7 +78,7 @@ class Map:
             print('|')
 
         print("------", end = "")
-        for i in range(len(self.board[0])):
+        for i in range(len(self.board.board[0])):
             print("---", end = "")
         print("")
     
@@ -102,23 +88,23 @@ class Map:
 
         # Print column numbers
         print('    ', end='')
-        for col in range(len(self.board[0])):
+        for col in range(len(self.board.board[0])):
             if col == 10:
                 print(" ", end= "")
             print(f'{col:2}', end=' ')
         print()
 
         print("------", end = "")
-        for i in range(len(self.board[0])):
+        for i in range(len(self.board.board[0])):
             print("---", end = "")
         print("\n", end = "")
 
         # Loop through the rows
-        for i in range(len(self.board)):
+        for i in range(len(self.board.board)):
             print(f'{i:2} | ', end='')
             # Loop through the columns
-            for j in range(len(self.board[i])):
-                if self.board[i][j] == self.obstacle_code:
+            for j in range(len(self.board.board[i])):
+                if self.board.board[i][j] == self.obstacle_code:
                     print('[]', end=' ')
                 else:
                     found = False
@@ -133,7 +119,7 @@ class Map:
             print('|')
 
         print("------", end = "")
-        for i in range(len(self.board[0])):
+        for i in range(len(self.board.board[0])):
             print("---", end = "")
         print("")
 
@@ -143,14 +129,14 @@ class Map:
 
         # Print column numbers
         print('    ', end='')
-        for col in range(len(self.board[0])):
+        for col in range(len(self.board.board[0])):
             if col == 10:
                 print(" ", end= "")
             print(f'{col:2}', end=' ')
         print()
 
         print("------", end = "")
-        for i in range(len(self.board[0])):
+        for i in range(len(self.board.board[0])):
             print("---", end = "")
         print("\n", end = "")
 
@@ -173,7 +159,7 @@ class Map:
             print('|')
 
         print("------", end = "")
-        for i in range(len(self.board[0])):
+        for i in range(len(self.board.board[0])):
             print("---", end = "")
         print("")
 
@@ -195,164 +181,82 @@ class Map:
 #
     def find_chokepoints(self) -> list[tuple]:
         chokepoints = []
-        for row in range(len(self.board)):
-            for col in range(len(self.board[0])):
+        for row in range(len(self.board.board)):
+            for col in range(len(self.board.board[0])):
                 if self.is_chokepoint(row, col):
                     chokepoints.append((row, col))
         return chokepoints
 # =================================================================================================
-# Checks if the point is a chokepoint
+    # Define the conditions for different types of chokepoints
     def is_chokepoint(self, row: int, col: int) -> bool:
         # Ensure the current cell is an empty square
-        if self.board[row][col] != self.empty_square_code:
-            return False
-
-        # Define the conditions for different types of chokepoints
-    def is_chokepoint(self, row: int, col: int) -> bool:
-        # Ensure the current cell is an empty square
-        if self.board[row][col] != self.empty_square_code:
+        if self.board.board[row][col] != self.empty_square_code:
             return False
 
         # Top left corner
-        if self.is_top_left_corner(row, col):
-            if (self.obstacle_below(row, col) and self.empty_square_right(row, col)) or (self.obstacle_right(row, col) and self.empty_square_below(row, col)):
+        if self.board.is_top_left_corner(row, col):
+            if (self.board.obstacle_below(row, col) and self.board.empty_square_right(row, col)) or (self.board.obstacle_right(row, col) and self.board.empty_square_below(row, col)):
                 return True
             else:
                 return False
             
         # Top right corner
-        if self.is_top_right_corner(row, col):
-            if (self.obstacle_below(row, col) and self.empty_square_left(row, col)) or (self.obstacle_left(row, col) and self.empty_square_below(row, col)):
+        if self.board.is_top_right_corner(row, col):
+            if (self.board.obstacle_below(row, col) and self.board.empty_square_left(row, col)) or (self.board.obstacle_left(row, col) and self.board.empty_square_below(row, col)):
                 return True
             else:
                 return False
 
         # Bottom left corner
-        if self.is_bottom_left_corner(row, col):
-            if (self.obstacle_above(row, col) and self.empty_square_right(row, col)) or (self.obstacle_right(row, col) and self.empty_square_above(row, col)):
+        if self.board.is_bottom_left_corner(row, col):
+            if (self.board.obstacle_above(row, col) and self.board.empty_square_right(row, col)) or (self.board.obstacle_right(row, col) and self.board.empty_square_above(row, col)):
                 return True
             else:
                 return False
 
         # Bottom right corner
-        if self.is_bottom_right_corner(row, col):
-            if (self.obstacle_above(row, col) and self.empty_square_left(row, col)) or (self.obstacle_left(row, col) and self.empty_square_above(row, col)):
+        if self.board.is_bottom_right_corner(row, col):
+            if (self.board.obstacle_above(row, col) and self.board.empty_square_left(row, col)) or (self.board.obstacle_left(row, col) and self.board.empty_square_above(row, col)):
                 return True
             else:
                 return False
 
         # Above edge
-        if self.edge_above(row, col):
-            if (self.obstacle_left_and_right(row, col) and self.empty_square_below(row, col)) or (self.obstacle_below(row, col) and (self.empty_square_left(row, col) or self.empty_square_right(row, col))):
+        if self.board.edge_above(row, col):
+            if (self.board.obstacle_left_and_right(row, col) and self.board.empty_square_below(row, col)) or (self.board.obstacle_below(row, col) and (self.board.empty_square_left(row, col) or self.board.empty_square_right(row, col))):
                 return True
             else:
                 return False
 
         # Below edge
-        if self.edge_below(row, col):
-            if (self.obstacle_left_and_right(row, col) and self.empty_square_above(row, col)) or (self.obstacle_above(row, col) and (self.empty_square_left(row, col) or self.empty_square_right(row, col))):
+        if self.board.edge_below(row, col):
+            if (self.board.obstacle_left_and_right(row, col) and self.board.empty_square_above(row, col)) or (self.board.obstacle_above(row, col) and (self.board.empty_square_left(row, col) or self.board.empty_square_right(row, col))):
                 return True
             else:
                 return False
 
         # Left edge
-        if self.edge_left(row, col):
-            if (self.obstacle_above_and_below(row, col) and self.empty_square_right(row, col)) or (self.obstacle_right(row, col) and (self.empty_square_above(row, col) or self.empty_square_below(row, col))):
+        if self.board.edge_left(row, col):
+            if (self.board.obstacle_above_and_below(row, col) and self.board.empty_square_right(row, col)) or (self.board.obstacle_right(row, col) and (self.board.empty_square_above(row, col) or self.board.empty_square_below(row, col))):
                 return True
             else:
                 return False
 
         # Right edge
-        if self.edge_right(row, col):
-            if (self.obstacle_above_and_below(row, col) and self.empty_square_left(row, col)) or (self.obstacle_left(row, col) and (self.empty_square_above(row, col) or self.empty_square_below(row, col))):
+        if self.board.edge_right(row, col):
+            if (self.board.obstacle_above_and_below(row, col) and self.board.empty_square_left(row, col)) or (self.board.obstacle_left(row, col) and (self.board.empty_square_above(row, col) or self.board.empty_square_below(row, col))):
                 return True
             else:
                 return False
 
         # Middle
-        if self.is_in_middle(row, col):
-            if (self.obstacle_above_and_below(row, col) and (self.empty_square_left(row, col) or self.empty_square_right(row, col))) or (self.obstacle_left_and_right(row, col) and (self.empty_square_above(row, col) or self.empty_square_below(row, col))):
+        if self.board.is_in_middle(row, col):
+            if (self.board.obstacle_above_and_below(row, col) and (self.board.empty_square_left(row, col) or self.board.empty_square_right(row, col))) or (self.board.obstacle_left_and_right(row, col) and (self.board.empty_square_above(row, col) or self.board.empty_square_below(row, col))):
                 return True
             else:
                 return False
 
 # endregion
-
-# =================================================================================================
-# SQUARE CHECK METHODS
-# =================================================================================================
-# region SQUARE CHECKS
-# =================================================================================================
-    # Specific check
-    def square_is(self, row, col, type):
-        return self.board[row][col] == type
-    def square_is_empty(self, row, col):
-        return self.board[row][col] == self.empty_square_code
-    def square_is_obstacle(self, row, col):
-        return self.board[row][col] == self.obstacle_code
-# =================================================================================================
-    # Diagonal obstacles check
-    def obstacle_above_left(self, row, col):
-        return self.board[row-1][col-1] == self.obstacle_code
-    def obstacle_above_right(self, row, col):
-        return self.board[row-1][col+1] == self.obstacle_code
-    def obstacle_below_left(self, row, col):
-        return self.board[row+1][col-1] == self.obstacle_code
-    def obstacle_below_right(self, row, col):
-        return self.board[row+1][col+1] == self.obstacle_code
-# =================================================================================================
-    # Empty squares check
-    def empty_square_left(self, row, col):
-        return self.board[row][col-1] == self.empty_square_code
-    def empty_square_right(self, row, col):
-        return self.board[row][col+1] == self.empty_square_code
-    def empty_square_above(self, row, col):
-        return self.board[row-1][col] == self.empty_square_code
-    def empty_square_below(self, row, col):
-        return self.board[row+1][col] == self.empty_square_code
-    def empty_square_left_and_right(self, row, col):
-        return self.empty_square_left(row, col) and self.empty_square_right(row, col)
-    def empty_square_above_and_below(self, row, col):
-        return self.empty_square_above(row, col) and self.empty_square_below(row, col)
-# =================================================================================================
-    # Obstacles check
-    def obstacle_left(self, row, col):
-        return self.board[row][col-1] == self.obstacle_code
-    def obstacle_right(self, row, col):
-        return self.board[row][col+1] == self.obstacle_code
-    def obstacle_above(self, row, col):
-        return self.board[row-1][col] == self.obstacle_code
-    def obstacle_below(self, row, col):
-        return self.board[row+1][col] == self.obstacle_code
-    def obstacle_left_and_right(self, row, col):
-        return self.obstacle_left(row, col) and self.obstacle_right(row, col)
-    def obstacle_above_and_below(self, row, col):
-        return self.obstacle_above(row, col) and self.obstacle_below(row, col)
-# =================================================================================================
-    # Edges check
-    def edge_left(self, row, col):
-        return col == 0
-    def edge_right(self, row, col):
-        return col == len(self.board[0]) - 1
-    def edge_above(self, row, col):
-        return row == 0
-    def edge_below(self, row, col):
-        return row == len(self.board) - 1
-# =================================================================================================
-    # Corners check
-    def is_top_left_corner(self, row, col):
-        return (row == 0 and col == 0)
-    def is_top_right_corner(self, row, col):
-        return (row == 0 and col == len(self.board[0]) -1)
-    def is_bottom_left_corner(self, row, col):
-        return (row == len(self.board) - 1 and col == 0)
-    def is_bottom_right_corner(self, row, col):
-        return (row == len(self.board) - 1 and col == len(self.board[0]) - 1)
-# =================================================================================================
-    # Middle check
-    def is_in_middle(self, row, col):
-        return 0 < row < len(self.board) - 1 and 0 < col < len(self.board[0]) - 1
-    # endregion
 
 # =================================================================================================
 # DEADENDS
@@ -377,77 +281,77 @@ class Map:
         end = (0,0)
         evaluate = False
 
-        if self.is_in_middle(row, col):
+        if self.board.is_in_middle(row, col):
             # If chokepoint is in the middle surrounded by empty_squares, need to evaulate paths 
-            if self.empty_square_left_and_right(row, col):
+            if self.board.empty_square_left_and_right(row, col):
                 start = left
                 end = right
                 evaluate = True
-            elif self.empty_square_above_and_below(row, col):
+            elif self.board.empty_square_above_and_below(row, col):
                 start = above
                 end = below
                 evaluate = True
             # Chokepoints surrounded by 3 obstacles are deadends only if burried 2 or more squares deep
-            elif self.obstacle_above_and_below(row, col):
-                if self.obstacle_left(row, col) and self.obstacle_above_right(row, col) and self.obstacle_below_right(row, col):
+            elif self.board.obstacle_above_and_below(row, col):
+                if self.board.obstacle_left(row, col) and self.board.obstacle_above_right(row, col) and self.board.obstacle_below_right(row, col):
                     return True
-                elif self.obstacle_right(row, col) and self.obstacle_above_left(row, col) and self.obstacle_below_left(row, col):
+                elif self.board.obstacle_right(row, col) and self.board.obstacle_above_left(row, col) and self.board.obstacle_below_left(row, col):
                     return True
-            elif self.obstacle_left_and_right(row, col) :
-                if self.obstacle_above(row, col) and self.obstacle_below_left(row, col) and self.obstacle_below_right(row, col):
+            elif self.board.obstacle_left_and_right(row, col) :
+                if self.board.obstacle_above(row, col) and self.board.obstacle_below_left(row, col) and self.board.obstacle_below_right(row, col):
                     return True
-                elif self.obstacle_below(row, col) and self.obstacle_above_left(row, col) and self.obstacle_above_right(row, col):
+                elif self.board.obstacle_below(row, col) and self.board.obstacle_above_left(row, col) and self.board.obstacle_above_right(row, col):
                     return True
         # Corners are only deadends if burried with 2 or more obstacles
-        elif self.is_top_left_corner(row, col):
-            if (self.obstacle_below(row, col) or self.obstacle_right(row, col)) and self.obstacle_below_right(row, col):
+        elif self.board.is_top_left_corner(row, col):
+            if (self.board.obstacle_below(row, col) or self.board.obstacle_right(row, col)) and self.board.obstacle_below_right(row, col):
                 return True
-        elif self.is_top_right_corner(row, col):
-            if (self.obstacle_below(row, col) or self.obstacle_left(row, col)) and self.obstacle_below_left(row, col):
+        elif self.board.is_top_right_corner(row, col):
+            if (self.board.obstacle_below(row, col) or self.board.obstacle_left(row, col)) and self.board.obstacle_below_left(row, col):
                 return True
-        elif self.is_bottom_left_corner(row, col):
-            if (self.obstacle_above(row, col) or self.obstacle_right(row, col)) and self.obstacle_above_right(row, col):
+        elif self.board.is_bottom_left_corner(row, col):
+            if (self.board.obstacle_above(row, col) or self.board.obstacle_right(row, col)) and self.board.obstacle_above_right(row, col):
                 return True
-        elif self.is_bottom_right_corner(row, col):
-            if (self.obstacle_above(row, col) or self.obstacle_left(row, col)) and self.obstacle_above_left(row, col):
+        elif self.board.is_bottom_right_corner(row, col):
+            if (self.board.obstacle_above(row, col) or self.board.obstacle_left(row, col)) and self.board.obstacle_above_left(row, col):
                 return True
         # Edge chokepoints surrounded by empty sqaures need to evaluate paths
-        elif (self.edge_above(row, col) or self.edge_below(row, col)) and self.empty_square_left_and_right(row, col):
+        elif (self.board.edge_above(row, col) or self.board.edge_below(row, col)) and self.board.empty_square_left_and_right(row, col):
                 start = left
                 end = right
                 evaluate = True
-        elif (self.edge_left(row, col) or self.edge_right(row, col)) and self.empty_square_above_and_below(row, col):
+        elif (self.board.edge_left(row, col) or self.board.edge_right(row, col)) and self.board.empty_square_above_and_below(row, col):
                 start = above
                 end = below
                 evaluate = True
         # Edge chokepoints 
-        elif self.edge_left(row, col):
-            if self.obstacle_above_and_below(row, col) and self.obstacle_above_right(row, col) and self.obstacle_below_right(row, col):
+        elif self.board.edge_left(row, col):
+            if self.board.obstacle_above_and_below(row, col) and self.board.obstacle_above_right(row, col) and self.board.obstacle_below_right(row, col):
                 return True
-            elif self.obstacle_above(row, col) and self.obstacle_right(row, col) and self.obstacle_below_right(row, col):
+            elif self.board.obstacle_above(row, col) and self.board.obstacle_right(row, col) and self.board.obstacle_below_right(row, col):
                 return True
-            elif self.obstacle_below(row, col) and self.obstacle_right(row, col) and self.obstacle_above_right(row, col):
+            elif self.board.obstacle_below(row, col) and self.board.obstacle_right(row, col) and self.board.obstacle_above_right(row, col):
                 return True
-        elif self.edge_right(row, col):
-            if self.obstacle_above_and_below(row, col) and self.obstacle_above_left(row, col) and self.obstacle_below_left(row, col):
+        elif self.board.edge_right(row, col):
+            if self.board.obstacle_above_and_below(row, col) and self.board.obstacle_above_left(row, col) and self.board.obstacle_below_left(row, col):
                 return True
-            elif self.obstacle_above(row, col) and self.obstacle_left(row, col) and self.obstacle_below_left(row, col):
+            elif self.board.obstacle_above(row, col) and self.board.obstacle_left(row, col) and self.board.obstacle_below_left(row, col):
                 return True
-            elif self.obstacle_below(row, col) and self.obstacle_left(row, col) and self.obstacle_above_left(row, col):
+            elif self.board.obstacle_below(row, col) and self.board.obstacle_left(row, col) and self.board.obstacle_above_left(row, col):
                 return True
-        elif self.edge_above(row, col):
-            if self.obstacle_left_and_right(row, col) and self.obstacle_below_left(row, col) and self.obstacle_below_right(row, col):
+        elif self.board.edge_above(row, col):
+            if self.board.obstacle_left_and_right(row, col) and self.board.obstacle_below_left(row, col) and self.board.obstacle_below_right(row, col):
                 return True
-            elif self.obstacle_left(row, col) and self.obstacle_below(row, col) and self.obstacle_below_right(row, col):
+            elif self.board.obstacle_left(row, col) and self.board.obstacle_below(row, col) and self.board.obstacle_below_right(row, col):
                 return True
-            elif self.obstacle_right(row, col) and self.obstacle_below(row, col) and self.obstacle_below_left(row, col):
+            elif self.board.obstacle_right(row, col) and self.board.obstacle_below(row, col) and self.board.obstacle_below_left(row, col):
                 return True
-        elif self.edge_below(row, col):
-            if self.obstacle_left_and_right(row, col) and self.obstacle_above_left(row, col) and self.obstacle_above_right(row, col):
+        elif self.board.edge_below(row, col):
+            if self.board.obstacle_left_and_right(row, col) and self.board.obstacle_above_left(row, col) and self.board.obstacle_above_right(row, col):
                 return True
-            elif self.obstacle_left(row, col) and self.obstacle_above(row, col) and self.obstacle_above_right(row, col):
+            elif self.board.obstacle_left(row, col) and self.board.obstacle_above(row, col) and self.board.obstacle_above_right(row, col):
                 return True
-            elif self.obstacle_right(row, col) and self.obstacle_above(row, col) and self.obstacle_above_left(row, col):
+            elif self.board.obstacle_right(row, col) and self.board.obstacle_above(row, col) and self.board.obstacle_above_left(row, col):
                 return True
         
         if evaluate:
@@ -458,7 +362,7 @@ class Map:
 # # =================================================================================================
 # True if a path exists on the board from start to end and not passing through the chokepoint
     def does_path_exist(self, start: tuple[int, int], end: tuple[int, int], chokepoint: tuple[int, int] = None) -> bool:
-        rows, cols = len(self.board), len(self.board[0])
+        rows, cols = len(self.board.board), len(self.board.board[0])
         visited = [[False for _ in range(cols)] for _ in range(rows)]
 
         def is_valid_move(board, visited, row, col, chokepoint) -> bool:
@@ -482,7 +386,7 @@ class Map:
             directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
             for dr, dc in directions:
                 new_row, new_col = row + dr, col + dc
-                if is_valid_move(self.board, visited, new_row, new_col, chokepoint):
+                if is_valid_move(self.board.board, visited, new_row, new_col, chokepoint):
                     if backtrack(new_row, new_col):
                         return True
             
@@ -554,7 +458,7 @@ class Map:
 # region ZONES
 # Returns a list of zones based on the board and deadends
     def get_zones_of_map(self) -> list[Zone]:
-        rows, cols = len(self.board), len(self.board[0])
+        rows, cols = len(self.board.board), len(self.board.board[0])
         directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
         deadends_set = set(self.deadends)
         visited = set()
@@ -568,7 +472,7 @@ class Map:
             zone = []
             while queue:
                 r, c = queue.pop(0)
-                if (r, c) in visited or (r, c) in deadends_set or self.board[r][c] == self.obstacle_code:
+                if (r, c) in visited or (r, c) in deadends_set or self.board.board[r][c] == self.obstacle_code:
                     continue
                 visited.add((r, c))
                 zone.append((r, c))
@@ -604,7 +508,7 @@ class Map:
         # Get the points in the zones
         for r in range(rows):
             for c in range(cols):
-                if self.board[r][c] == self.empty_square_code and (r, c) not in visited:
+                if self.board.board[r][c] == self.empty_square_code and (r, c) not in visited:
                     if (r, c) in deadends_set:
                         zones_pre.append([(r, c)])  # Add deadend as individual zone
                     else:

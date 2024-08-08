@@ -42,9 +42,9 @@ class Map_Matchups(Enum):
 class Monsters_Codes(Enum):
     # Monsters
     monster1 = 'A'
-    monster2 = 'B'
-    monster3 = 'C'
-    monster4 = 'D'
+    monster2 = 'b'
+    monster3 = 'c'
+    monster4 = 'd'
 
 class Hero_Class(Enum):
     monk = 'mo'

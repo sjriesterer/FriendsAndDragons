@@ -8,6 +8,8 @@
 import sys
 import os
 import time
+from modules.board import Board
+from modules.checks import Check
 from modules.configuration import Configuration
 from modules.hero import Hero
 from modules.setup import Setup
@@ -109,10 +111,18 @@ def parse_input(input: list[str]):
 
 # =================================================================================================
 # Remove spaces and convert to uppercase
-def format_input(input: list[str]):
+def upper_and_remove_spaces(input: list[str]):
     new_input = []
     for item in input:
         new_input.append(item.upper().replace(' ', ''))
+    return new_input
+
+# =================================================================================================
+# Remove spaces and convert to uppercase
+def remove_spaces(input: list[str]):
+    new_input = []
+    for item in input:
+        new_input.append(item.replace(' ', ''))
     return new_input
 
 # =================================================================================================
@@ -131,24 +141,25 @@ def init_input_boards():
 
     # Parse input boards from list of strings to lists of list of characters:
     s = Setup()
-    s.board_positions = parse_input(format_input(input_board_positions))
-    s.board_terrain = parse_input(format_input(input_board_terrain))
+    s.hero_id = -1 # -1 to indicate this is the base for all heroes
+    s.board_positions_base = parse_input(remove_spaces(input_board_positions))
+    s.board_terrain_base = parse_input(upper_and_remove_spaces(input_board_terrain))
+    # Positions are not formatted to upper because capital letter indicates immovable monster
+    s.board_positions_base = Board("Base positions", parse_input(remove_spaces(input_board_positions)))
+    s.board_terrain_base = Board("Base terrain", parse_input(upper_and_remove_spaces(input_board_terrain)))
     setups.append(s)
 
-    # board_terrain = parse_input(format_input(input_board_terrain))
-    # board_positions = parse_input(format_input(input_board_positions))
-
-    for r in s.board_terrain:
+    for r in s.board_terrain_base.board:
         print(r)
     print("")
-    for r in s.board_positions:
+    for r in s.board_positions_base.board:
         print(r)
     print("")
 
     # Count specific number of obstacles:
-    num_lava_obstacles = count_obstacles(s.board_terrain, [code_lava])
-    num_water_obstacles = count_obstacles(s.board_terrain, [code_water])
-    num_rubble_obstacles = count_obstacles(s.board_terrain, [code_rubble])
+    num_lava_obstacles = count_obstacles(s.board_terrain_base.board, [code_lava])
+    num_water_obstacles = count_obstacles(s.board_terrain_base.board, [code_water])
+    num_rubble_obstacles = count_obstacles(s.board_terrain_base.board, [code_rubble])
     num_flying_obstacles = num_lava_obstacles + num_water_obstacles + num_rubble_obstacles
 
 # =================================================================================================
@@ -173,39 +184,40 @@ def init_needed_maps() -> list[int]:
 # Gets all the maps that will be needed
 def init_maps():
     global maps
+    board_name = "Obstacles"
 
     # Init the different types of maps. Only need to init if they are going to be used.
     # Init basic map
     obstacles_basic_codes = [code_obstacle, code_lava, code_water, code_rubble]
-    board_obstacles_basic = get_obstacle_board(setups[0].board_terrain, setups[0].board_positions, obstacles_basic_codes)
+    board_obstacles_basic = get_obstacle_board(board_name, setups[0].board_terrain_base, setups[0].board_positions_base, obstacles_basic_codes)
     map_basic: Map = Map(map_type_basic, "Basic", board_obstacles_basic)
 
     # Init lava map
     map_lava = None
     if need_lava_map:
         obstacles_lava_codes = [code_obstacle, code_water, code_rubble]
-        board_obstacles_lava = get_obstacle_board(setups[0].board_terrain, setups[0].board_positions, obstacles_lava_codes)
+        board_obstacles_lava = get_obstacle_board(board_name, setups[0].board_terrain_base, setups[0].board_positions_base, obstacles_lava_codes)
         map_lava: Map = Map(map_type_lava, "Lava", board_obstacles_lava)
 
     # Init water map
     map_water = None
     if need_water_map:
         obstacles_water_codes = [code_obstacle, code_lava, code_rubble]
-        board_obstacles_water = get_obstacle_board(setups[0].board_terrain, setups[0].board_positions, obstacles_water_codes)
+        board_obstacles_water = get_obstacle_board(board_name, setups[0].board_terrain_base, setups[0].board_positions_base, obstacles_water_codes)
         map_water: Map = Map(map_type_water, "Water", board_obstacles_water)
 
     # Init rubble map
     map_rubble = None
     if need_rubble_map:
         obstacles_rubble_codes = [code_obstacle, code_lava, code_water]
-        board_obstacles_rubble = get_obstacle_board(setups[0].board_terrain, setups[0].board_positions, obstacles_rubble_codes)
+        board_obstacles_rubble = get_obstacle_board(board_name, setups[0].board_terrain_base, setups[0].board_positions_base, obstacles_rubble_codes)
         map_rubble: Map = Map(map_type_rubble, "Rubble", board_obstacles_rubble)
 
     # Init flying map
     map_flying = None
     if need_flying_map:
         obstacles_flying_codes = [code_obstacle]
-        board_obstacles_flying = get_obstacle_board(setups[0].board_terrain, setups[0].board_positions, obstacles_flying_codes)
+        board_obstacles_flying = get_obstacle_board(board_name, setups[0].board_terrain_base, setups[0].board_positions_base, obstacles_flying_codes)
         map_flying: Map = Map(map_type_flying, "Flying", board_obstacles_flying)
 
     maps = [map_basic, map_lava, map_water, map_rubble, map_flying]
@@ -297,11 +309,10 @@ def get_hero(hero: Hero) -> Hero:
 # Evaluates both boards (terrain and positions) and identifies obstacles into one board
 # obstacles is a list of characters that will be identified as an obstacle (e.g. L for lava, W for 
 # water, etc.)
-def get_obstacle_board(board_terrain: list[list[chr]], board_pos: list[list[chr]], obstacles: list[chr]) -> list[list[chr]]:
+def get_obstacle_board(name: str, board_terrain: Board, board_pos: Board, obstacles: list[chr]) -> Board:
     # Determine the size of the boards
-    rows = len(board_terrain)
-    cols = len(board_terrain[0])
-    # board: Board = Board()
+    rows = len(board_terrain.board)
+    cols = len(board_terrain.board[0])
 
     # Create an empty board for the final output
     final_board = [[code_empty for _ in range(cols)] for _ in range(rows)]
@@ -309,17 +320,20 @@ def get_obstacle_board(board_terrain: list[list[chr]], board_pos: list[list[chr]
     # Iterate through each position in the boards
     for i in range(rows):
         for j in range(cols):
+            char = board_terrain.board[i][j]
             # Check if the terrain board has an obstacle
-            if board_terrain[i][j] in obstacles:
+            if board_terrain.board[i][j] in obstacles:
                 final_board[i][j] = code_obstacle
             # Check if the position board has a monster character
-            elif board_pos[i][j] in monster_codes:
+            elif board_pos.board[i][j] in monster_codes:
                 final_board[i][j] = code_obstacle
             # Otherwise, keep the square empty
             else:
                 final_board[i][j] = code_empty
     
-    return final_board
+    new_board = Board(name, final_board)
+
+    return new_board
 
 # =================================================================================================
 # 
@@ -368,19 +382,84 @@ def init_points():
 
 # =================================================================================================
 # 
-def init_setups() -> list[Setup]:
-    # for h in heroes:
-    #     if h.push > 0
+def init_setups(base_board_terrain: Board, base_board_positions: Board):
+    # Only need additional setups if there is a pivot hero with push or tumble
+    if not any(h.pivot and (h.push > 0 or h.tumble > 0) for h in heroes):
+        return
+    
+    for h in heroes:
+        if h.pivot:
+            if h.push > 0:
+                new_setup = Setup()
+                new_setup.hero_id = h.id
+                new_setup.board_positions_base = base_board_positions
+                new_setup.board_terrain_base = base_board_terrain
+                new_setup.board_positions1 = get_board_positions_push(new_setup)
+                if h.push > 1:
+                    new_setup.board_positions2 = get_board_positions_push(new_setup)
+                if h.push > 2:
+                    new_setup.board_positions3 = get_board_positions_push(new_setup)
+                # if h.push > 3:
+                #     new_setup.board_positions4 = get_setup_list(new_setup)
+                setups.append(new_setup)
+
+    return None
+
+# =================================================================================================
+# 
+def get_board_positions_push(setup: Setup) -> list[list[list[chr]]]:
     list = []
+    board_positions = setup.board_positions_base
+    board_terrain = setup.board_terrain_base
+
+    check = Check()
+    num_pushes = heroes[setup.hero_id].push
+
+    
+    for point in heroes[setup.hero_id].pivot_points:
+        num_monsters = get_num_monsters_in_direction(point, check.up, board_positions, board_terrain)
+        if num_monsters <= num_pushes:
+            push_monsters(point, check.up, board_positions)
+
+        pass
+
+
+
 
     return list
 
+# =================================================================================================
+# 
+def push_monsters(position: tuple, direction: tuple, board: list[list[chr]]):
+    pass
+
+# =================================================================================================
+# 
+def get_num_monsters_in_direction(position: tuple, direction: tuple, board_positions: list[list[chr]], board_terrain: list[list[chr]]):
+    check = Check()
+    count = 0
+
+    # if (direction == check.up):
+    #     if (check.edge_above(position)):
+    #         return False, 0
+    # elif (direction == check.down):
+    #     if (check.edge_below(position)):
+    #         return False, 0
+    # elif (direction == check.right):
+    #     if (check.edge_above(position)):
+    #         return False, 0
+    # elif (direction == check.left):
+    #     if (check.edge_above(position)):
+    #         return False, 0
+
+
+    return count
 # =================================================================================================
 # VALIDATION METHODS
 # =================================================================================================
 # Determine if inputs are valid
 def validate_inputs():
-    #TODO
+    #TODO write validation method
     return True
 
 # =================================================================================================
@@ -641,7 +720,7 @@ init_input_boards()
 init_needed_maps()
 init_maps()
 init_heroes()
-init_setups()
+init_setups(setups[0].board_terrain_base.board, setups[0].board_positions_base.board)
 
 
 # hero_pos: list[tuple] = []
