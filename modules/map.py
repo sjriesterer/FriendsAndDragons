@@ -375,15 +375,18 @@ class Map:
         below = (row+1, col)
         start = (0,0)
         end = (0,0)
+        evaluate = False
 
         if self.is_in_middle(row, col):
             # If chokepoint is in the middle surrounded by empty_squares, need to evaulate paths 
             if self.empty_square_left_and_right(row, col):
                 start = left
                 end = right
+                evaluate = True
             elif self.empty_square_above_and_below(row, col):
                 start = above
                 end = below
+                evaluate = True
             # Chokepoints surrounded by 3 obstacles are deadends only if burried 2 or more squares deep
             elif self.obstacle_above_and_below(row, col):
                 if self.obstacle_left(row, col) and self.obstacle_above_right(row, col) and self.obstacle_below_right(row, col):
@@ -412,9 +415,11 @@ class Map:
         elif (self.edge_above(row, col) or self.edge_below(row, col)) and self.empty_square_left_and_right(row, col):
                 start = left
                 end = right
+                evaluate = True
         elif (self.edge_left(row, col) or self.edge_right(row, col)) and self.empty_square_above_and_below(row, col):
                 start = above
                 end = below
+                evaluate = True
         # Edge chokepoints 
         elif self.edge_left(row, col):
             if self.obstacle_above_and_below(row, col) and self.obstacle_above_right(row, col) and self.obstacle_below_right(row, col):
@@ -438,14 +443,17 @@ class Map:
             elif self.obstacle_right(row, col) and self.obstacle_below(row, col) and self.obstacle_below_left(row, col):
                 return True
         elif self.edge_below(row, col):
-            if self.obstacle_left_and_right(row, col) and self.obstacle_above_left(row, col) and self.obstacle_above_left(row, col):
+            if self.obstacle_left_and_right(row, col) and self.obstacle_above_left(row, col) and self.obstacle_above_right(row, col):
                 return True
             elif self.obstacle_left(row, col) and self.obstacle_above(row, col) and self.obstacle_above_right(row, col):
                 return True
             elif self.obstacle_right(row, col) and self.obstacle_above(row, col) and self.obstacle_above_left(row, col):
                 return True
         
-        return not self.does_path_exist(start, end, chokepoint)
+        if evaluate:
+            return not self.does_path_exist(start, end, chokepoint)
+        else:
+            return False
 
 # # =================================================================================================
 # True if a path exists on the board from start to end and not passing through the chokepoint

@@ -42,7 +42,7 @@ class Inputs():
     ]
 
 
-    terrain = [
+    terrain3 = [
         "..ooo.....",
         ".o........",
         "o...wwwww.",
@@ -55,12 +55,53 @@ class Inputs():
         "....o.....",
     ]
 
+    terrain4 = [
+        "..ooo.....",
+        ".o........",
+        "o...wwwwww",
+        "o.ooo...l.",
+        "o.oo....o.",
+        "ollooo....",
+        "...o...r.r",
+        "roo..l....",
+        "...oo..o..",
+        "....o..o.o",
+    ]
+
+# =================================================================================================
+    terrain = [
+        ".rl..w",
+        "......",
+        ".oo..o",
+        ".oo..o",
+        ".oo..o",
+    ]
+    positions = [
+        "0..1..",
+        "2..3..",
+        "4.....",
+        "......",
+        "......",
+    ]
+    heroes = [
+        Hero(cls="monk",   name="Blaise", pivot=True, terrain_id=lava_map_id, push = 3, mighty_blow=2),
+        Hero(cls="barbarian", pivot=True),
+        Hero(cls="mage", name="Elethas1", pivot=True, mighty_blow=2),
+        Hero(cls="mage", name= "Elethas2", terrain_id=lava_map_id, mighty_blow=1),
+        Hero(cls="healer"),
+        # Hero(cls="rogue",  name="Gloom", rubble=1, tumble=2),
+        # Hero(cls="healer", pivot=True, terrain_id=lava_map_id),
+        # Hero(cls="healer", pivot=True, terrain_id=water_map_id),
+        # Hero(cls="healer", pivot=True, terrain_id=flying_map_id),
+    ]
+
 # =================================================================================================
     # The positions of the monsters and heros on the board. (case insensitive, spaces will be eliminated)
     # Heros are ids 0-6
     # Monster ids are any letter
     # Empty squares are '.'
-    positions = [
+
+    positions3 = [
         "1.........",
         "....6.....",
         "..........",
@@ -105,7 +146,7 @@ class Inputs():
 # rubble_walker = 4 : Can traverse through rubble
 # flying_hero = 3 : Can fly
 
-    heroes = [
+    heroes2 = [
         Hero(cls="monk",   name="Blaise", pivot=True, push = 3, mighty_blow=2),
         Hero(cls="barbarian", terrain_id=water_map_id),
         Hero(cls="mage", name="Elethas1", mighty_blow=2),
